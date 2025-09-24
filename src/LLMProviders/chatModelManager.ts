@@ -6,6 +6,9 @@ import {
   ProviderInfo,
 } from "@/constants";
 import { getDecryptedKey } from "@/encryptionService";
+import { getTranslation } from "@/i18n/useTranslation";
+import { localeAtom } from "@/i18n/store";
+import { getDefaultStore } from "jotai";
 import { logError, logInfo } from "@/logger";
 import {
   CopilotSettings,
@@ -32,6 +35,13 @@ import { ChatOllama } from "@langchain/ollama";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatXAI } from "@langchain/xai";
 import { Notice } from "obsidian";
+
+// 获取当前翻译的工具函数
+function t(key: string, params?: Record<string, string | number>): string {
+  const store = getDefaultStore();
+  const locale = store.get(localeAtom);
+  return getTranslation(locale, key, params);
+}
 
 type ChatConstructorType = {
   new (config: any): any;
@@ -493,7 +503,7 @@ export default class ChatModelManager {
       }
     } catch (error) {
       logError(error);
-      new Notice(`Error creating model: ${modelKey}`);
+      new Notice(t("notifications.model.createError", { modelKey }));
     }
   }
 

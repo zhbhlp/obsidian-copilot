@@ -1,8 +1,9 @@
-import { addSelectedTextContext, getChainType } from "@/aiParams";
+import { addSelectedTextContext } from "@/aiParams";
 import { logFileManager } from "@/logFileManager";
 import { FileCache } from "@/cache/fileCache";
 import { ProjectContextCache } from "@/cache/projectContextCache";
-import { ChainType } from "@/chainFactory";
+// ChainType导入已移除 - 不再需要Plus检查
+import { t } from "@/i18n";
 import { logError } from "@/logger";
 
 import { CustomCommandSettingsModal } from "@/commands/CustomCommandSettingsModal";
@@ -18,6 +19,7 @@ import { CopilotSettings, getSettings, updateSetting } from "@/settings/model";
 import { SelectedTextContext } from "@/types/message";
 import { ensureFolderExists, isSourceModeOn } from "@/utils";
 import { Editor, MarkdownView, Notice, TFile } from "obsidian";
+
 import { v4 as uuidv4 } from "uuid";
 import { COMMAND_IDS, COMMAND_NAMES, CommandId } from "../constants";
 
@@ -73,7 +75,7 @@ export function registerCommands(
     const tokenCount = await plugin.projectManager
       .getCurrentChainManager()
       .chatModelManager.countTokens(selectedText);
-    new Notice(`Selected text contains ${wordCount} words and ${tokenCount} tokens.`);
+    new Notice(t("notifications.commands.tokenCount", { wordCount, tokenCount }));
   });
 
   addCommand(plugin, COMMAND_IDS.COUNT_TOTAL_VAULT_TOKENS, async () => {
@@ -82,10 +84,10 @@ export function registerCommands(
       const totalTokens = await plugin.projectManager
         .getCurrentChainManager()
         .chatModelManager.countTokens(allContent);
-      new Notice(`Total tokens in your vault: ${totalTokens}`);
+      new Notice(t("notifications.commands.totalVaultTokens", { totalTokens }));
     } catch (error) {
       logError("Error counting tokens: ", error);
-      new Notice("An error occurred while counting tokens.");
+      new Notice(t("notifications.commands.tokenCountError"));
     }
   });
 
@@ -111,13 +113,13 @@ export function registerCommands(
 
     // Need to check this again because it can still be triggered via shortcut.
     if (isSourceModeOn()) {
-      new Notice("Quick command is not available in source mode.");
+      new Notice(t("notifications.commands.quickCommandSourceMode"));
       return false;
     }
 
     // When not checking, execute the command
     if (!activeView || !activeView.editor) {
-      new Notice("No active editor found.");
+      new Notice(t("notifications.commands.noActiveEditor"));
       return false;
     }
 
@@ -125,7 +127,7 @@ export function registerCommands(
     const selectedText = editor.getSelection();
 
     if (!selectedText.trim()) {
-      new Notice("Please select some text first. Selected text is required for quick commands.");
+      new Notice(t("notifications.commands.selectTextFirst"));
       return false;
     }
 
@@ -146,10 +148,10 @@ export function registerCommands(
     try {
       const VectorStoreManager = (await import("@/search/vectorStoreManager")).default;
       await VectorStoreManager.getInstance().clearIndex();
-      new Notice("Cleared local Copilot semantic index.");
+      new Notice(t("notifications.commands.indexCleared"));
     } catch (err) {
       logError("Error clearing semantic index:", err);
-      new Notice("Failed to clear semantic index.");
+      new Notice(t("notifications.commands.indexClearFailed"));
     }
   });
 
@@ -157,10 +159,10 @@ export function registerCommands(
     try {
       const VectorStoreManager = (await import("@/search/vectorStoreManager")).default;
       const removedCount = await VectorStoreManager.getInstance().garbageCollectVectorStore();
-      new Notice(`Garbage collection completed. Removed ${removedCount} stale documents.`);
+      new Notice(t("notifications.commands.garbageCollectSuccess", { removedCount }));
     } catch (err) {
       logError("Error during garbage collection:", err);
-      new Notice("Failed to garbage collect semantic index.");
+      new Notice(t("notifications.commands.garbageCollectFailed"));
     }
   });
 
@@ -175,14 +177,14 @@ export function registerCommands(
         // Use VectorStoreManager for semantic search indexing
         const VectorStoreManager = (await import("@/search/vectorStoreManager")).default;
         const count = await VectorStoreManager.getInstance().indexVaultToVectorStore(false);
-        new Notice(`Semantic search index refreshed with ${count} documents.`);
+        new Notice(t("notifications.index.refreshed", { count }));
       } else {
         // V3 search builds indexes on demand
-        new Notice("Lexical search builds indexes on demand. No manual indexing required.");
+        new Notice(t("notifications.index.lexicalNoBuild"));
       }
     } catch (err) {
       logError("Error building index:", err);
-      new Notice("An error occurred while building the index.");
+      new Notice(t("notifications.commands.indexBuildError"));
     }
   });
 
@@ -195,14 +197,14 @@ export function registerCommands(
         // Use VectorStoreManager for semantic search indexing
         const VectorStoreManager = (await import("@/search/vectorStoreManager")).default;
         const count = await VectorStoreManager.getInstance().indexVaultToVectorStore(true);
-        new Notice(`Semantic search index rebuilt with ${count} documents.`);
+        new Notice(t("notifications.index.reindexed", { count }));
       } else {
         // V3 search builds indexes on demand
-        new Notice("Lexical search builds indexes on demand. No manual indexing required.");
+        new Notice(t("notifications.index.lexicalNoBuild"));
       }
     } catch (err) {
       logError("Error rebuilding index:", err);
-      new Notice("An error occurred while rebuilding the index.");
+      new Notice(t("notifications.commands.indexRebuildError"));
     }
   });
 
@@ -297,11 +299,11 @@ export function registerCommands(
       const file = plugin.app.vault.getAbstractFileByPath(filePath);
       if (file) {
         await plugin.app.workspace.getLeaf().openFile(file as TFile);
-        new Notice(`Listed ${indexedFiles.size} indexed files`);
+        new Notice(t("notifications.commands.listIndexedFilesCount", { count: indexedFiles.size }));
       }
     } catch (error) {
       logError("Error listing indexed files:", error);
-      new Notice("Failed to list indexed files.");
+      new Notice(t("notifications.commands.listIndexedFilesFailed"));
     }
   });
 
@@ -323,10 +325,10 @@ export function registerCommands(
       const { AutocompleteCache } = await import("@/cache/autocompleteCache");
       AutocompleteCache.getInstance().clear();
 
-      new Notice("All Copilot caches cleared successfully");
+      new Notice(t("notifications.commands.cacheClearSuccess"));
     } catch (error) {
       logError("Error clearing Copilot caches:", error);
-      new Notice("Failed to clear Copilot caches");
+      new Notice(t("notifications.commands.cacheClearFailed"));
     }
   });
 
@@ -336,7 +338,7 @@ export function registerCommands(
       await logFileManager.openLogFile();
     } catch (error) {
       logError("Error creating Copilot log file:", error);
-      new Notice("Failed to create Copilot log file.");
+      new Notice(t("notifications.commands.logFileCreateFailed"));
     }
   });
 
@@ -344,10 +346,10 @@ export function registerCommands(
   addCommand(plugin, COMMAND_IDS.CLEAR_LOG_FILE, async () => {
     try {
       await logFileManager.clear();
-      new Notice("Copilot log cleared.");
+      new Notice(t("notifications.commands.logFileCleared"));
     } catch (error) {
       logError("Error clearing Copilot log file:", error);
-      new Notice("Failed to clear Copilot log file.");
+      new Notice(t("notifications.commands.logFileClearFailed"));
     }
   });
 
@@ -356,37 +358,32 @@ export function registerCommands(
     const currentSettings = getSettings();
     const newValue = !currentSettings.enableAutocomplete;
     updateSetting("enableAutocomplete", newValue);
-    new Notice(`Copilot autocomplete ${newValue ? "enabled" : "disabled"}`);
+    const status = newValue
+      ? t("notifications.commands.autocompleteEnabled")
+      : t("notifications.commands.autocompleteDisabled");
+    new Notice(t("notifications.commands.autocompleteToggled", { status }));
   });
 
   // Add selection to chat context command
   addEditorCommand(plugin, COMMAND_IDS.ADD_SELECTION_TO_CHAT_CONTEXT, async (editor: Editor) => {
-    // Check if we're in Copilot Plus mode
-    const currentChainType = getChainType();
-    if (
-      currentChainType !== ChainType.COPILOT_PLUS_CHAIN &&
-      currentChainType !== ChainType.PROJECT_CHAIN
-    ) {
-      new Notice("Selected text context is only available in Copilot Plus and Project modes");
-      return;
-    }
+    // 已移除Plus限制 - 现在免费用户也可以使用"添加到聊天上下文"功能
 
     const selectedText = editor.getSelection();
     if (!selectedText) {
-      new Notice("No text selected");
+      new Notice(t("notifications.restrictions.noTextSelected"));
       return;
     }
 
     const activeFile = plugin.app.workspace.getActiveFile();
     if (!activeFile) {
-      new Notice("No active file");
+      new Notice(t("notifications.restrictions.noActiveFile"));
       return;
     }
 
     // Get selection range to determine line numbers
     const selectionRange = editor.listSelections()[0];
     if (!selectionRange) {
-      new Notice("Could not determine selection range");
+      new Notice(t("notifications.commands.noSelectionRange"));
       return;
     }
 

@@ -4,6 +4,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { useTranslation } from "@/i18n/useTranslation";
 
 import { HelpTooltip } from "@/components/ui/help-tooltip";
 import {
@@ -39,6 +40,7 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
   onCancel,
   isEmbeddingModel,
 }) => {
+  const { t } = useTranslation();
   const [localModel, setLocalModel] = useState<CustomModel>(model);
   const [originalModel, setOriginalModel] = useState<CustomModel>(model);
   const [providerInfo, setProviderInfo] = useState<ProviderMetadata>({} as ProviderMetadata);
@@ -123,35 +125,40 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
   return (
     <div className="tw-space-y-3 tw-p-4">
       <div className="tw-mb-4">
-        <h2 className="tw-text-xl tw-font-bold">Model Settings - {localModel.name}</h2>
-        <p className="tw-text-sm tw-text-muted">Customize model parameters</p>
+        <h2 className="tw-text-xl tw-font-bold">
+          {t("settings.modelEdit.title", { modelName: localModel.name })}
+        </h2>
+        <p className="tw-text-sm tw-text-muted">{t("settings.modelEdit.description")}</p>
       </div>
 
       <div className="tw-space-y-3">
-        <FormField label="Model Name" required>
+        <FormField label={t("settings.modelEdit.fields.modelName.label")} required>
           <Input
             type="text"
             disabled={localModel.core}
             value={localModel.name}
             onChange={(e) => handleLocalUpdate("name", e.target.value)}
-            placeholder="Enter model name"
+            placeholder={t("settings.modelEdit.fields.modelName.placeholder")}
           />
         </FormField>
 
         <FormField
           label={
             <div className="tw-flex tw-items-center tw-gap-1.5">
-              <span className="tw-leading-none">Display Name</span>
+              <span className="tw-leading-none">
+                {t("settings.modelEdit.fields.displayName.label")}
+              </span>
               <HelpTooltip
                 content={
                   <div className="tw-flex tw-flex-col tw-gap-0.5 tw-text-sm tw-text-muted">
-                    <div className="tw-text-[12px] tw-font-bold">Suggested format:</div>
-                    <div className="tw-text-accent">[Source]-[Payment]:[Pretty Model Name]</div>
+                    <div className="tw-text-[12px] tw-font-bold">
+                      {t("settings.modelEdit.fields.displayName.help.suggestedFormat")}
+                    </div>
+                    <div className="tw-text-accent">
+                      {t("settings.modelEdit.fields.displayName.help.formatExample")}
+                    </div>
                     <div className="tw-text-[12px]">
-                      Example:
-                      <li>Direct-Paid:Ds-r1</li>
-                      <li>OpenRouter-Paid:Ds-r1</li>
-                      <li>Perplexity-Paid:lg</li>
+                      {t("settings.modelEdit.fields.displayName.help.examples")}
                     </div>
                   </div>
                 }
@@ -162,17 +169,20 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
         >
           <Input
             type="text"
-            placeholder="Custom display name (optional)"
+            placeholder={t("settings.modelEdit.fields.displayName.placeholder")}
             value={localModel.displayName || ""}
             onChange={(e) => handleLocalUpdate("displayName", e.target.value)}
           />
         </FormField>
 
-        <FormField label="Provider">
+        <FormField label={t("settings.modelEdit.fields.provider.label")}>
           <Input type="text" value={getProviderLabel(localModel.provider)} disabled />
         </FormField>
 
-        <FormField label="Base URL" description="Leave it blank, unless you are using a proxy.">
+        <FormField
+          label={t("settings.modelEdit.fields.baseUrl.label")}
+          description={t("settings.modelEdit.fields.baseUrl.description")}
+        >
           <Input
             type="text"
             placeholder={getPlaceholderUrl()}
@@ -181,16 +191,18 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
           />
         </FormField>
 
-        <FormField label="API Key">
+        <FormField label={t("settings.modelEdit.fields.apiKey.label")}>
           <PasswordInput
-            placeholder={`Enter ${providerInfo.label || "Provider"} API Key`}
+            placeholder={t("settings.modelEdit.fields.apiKey.placeholder", {
+              provider: providerInfo.label || "Provider",
+            })}
             value={displayApiKey}
             onChange={(value) => handleLocalUpdate("apiKey", value)}
           />
           {providerInfo.keyManagementURL && (
             <p className="tw-text-xs tw-text-muted">
               <a href={providerInfo.keyManagementURL} target="_blank" rel="noopener noreferrer">
-                Get {providerInfo.label} API Key
+                {t("settings.modelEdit.fields.apiKey.getKey", { provider: providerInfo.label })}
               </a>
             </p>
           )}
@@ -201,11 +213,13 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
             <FormField
               label={
                 <div className="tw-flex tw-items-center tw-gap-1.5">
-                  <span className="tw-leading-none">Model Capabilities</span>
+                  <span className="tw-leading-none">
+                    {t("settings.modelEdit.fields.capabilities.label")}
+                  </span>
                   <HelpTooltip
                     content={
                       <div className="tw-text-sm tw-text-muted">
-                        Only used to display model capabilities, does not affect model functionality
+                        {t("settings.modelEdit.fields.capabilities.help")}
                       </div>
                     }
                     contentClassName="tw-max-w-96"
@@ -241,25 +255,14 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
               <ParameterControl
                 type={"slider"}
                 optional={false}
-                label="Token limit"
+                label={t("settings.modelEdit.fields.tokenLimit.label")}
                 value={localModel.maxTokens ?? settings.maxTokens}
                 onChange={(value) => handleLocalUpdate("maxTokens", value)}
                 max={65000}
                 min={0}
                 step={100}
                 defaultValue={DEFAULT_MODEL_SETTING.MAX_TOKENS}
-                helpText={
-                  <>
-                    <p>
-                      The maximum number of <em>output tokens</em> to generate. Default is{" "}
-                      {DEFAULT_MODEL_SETTING.MAX_TOKENS}.
-                    </p>
-                    <em>
-                      This number plus the length of your prompt (input tokens) must be smaller than
-                      the context window of the model.
-                    </em>
-                  </>
-                }
+                helpText={t("settings.modelEdit.fields.tokenLimit.help")}
               />
             </FormField>
 
@@ -267,21 +270,21 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
               <ParameterControl
                 type={"slider"}
                 optional={false}
-                label="Temperature"
+                label={t("settings.modelEdit.fields.temperature.label")}
                 value={localModel.temperature ?? settings.temperature}
                 onChange={(value) => handleLocalUpdate("temperature", value)}
                 max={2}
                 min={0}
                 step={0.05}
                 defaultValue={DEFAULT_MODEL_SETTING.TEMPERATURE}
-                helpText={`Default is ${DEFAULT_MODEL_SETTING.TEMPERATURE}. Higher values will result in more creativeness, but also more mistakes. Set to 0 for no randomness.`}
+                helpText={t("settings.modelEdit.fields.temperature.help")}
               />
             </FormField>
 
             <FormField>
               <ParameterControl
                 type={"slider"}
-                label="Top-P"
+                label={t("settings.modelEdit.fields.topP.label")}
                 value={localModel.topP}
                 onChange={(value) => handleLocalUpdate("topP", value)}
                 disableFn={() => handleLocalReset("topP")}
@@ -289,14 +292,14 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
                 min={0}
                 step={0.05}
                 defaultValue={0.9}
-                helpText="Default value is 0.9, the smaller the value, the less variety in the answers, the easier to understand, the larger the value, the larger the range of the AI's vocabulary, the more diverse"
+                helpText={t("settings.modelEdit.fields.topP.help")}
               />
             </FormField>
 
             <FormField>
               <ParameterControl
                 type={"slider"}
-                label="Frequency Penalty"
+                label={t("settings.modelEdit.fields.frequencyPenalty.label")}
                 value={localModel.frequencyPenalty}
                 onChange={(value) => handleLocalUpdate("frequencyPenalty", value)}
                 disableFn={() => handleLocalReset("frequencyPenalty")}
@@ -304,17 +307,7 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
                 min={0}
                 step={0.05}
                 defaultValue={0}
-                helpText={
-                  <>
-                    <p>
-                      The frequency penalty parameter tells the model not to repeat a word that has
-                      already been used multiple times in the conversation.
-                    </p>
-                    <em>
-                      The higher the value, the more the model is penalized for repeating words.
-                    </em>
-                  </>
-                }
+                helpText={t("settings.modelEdit.fields.frequencyPenalty.help")}
               />
             </FormField>
 
@@ -328,7 +321,7 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
                   <FormField>
                     <ParameterControl
                       type="select"
-                      label="Reasoning Effort"
+                      label={t("settings.modelEdit.fields.reasoningEffort.label")}
                       value={localModel.reasoningEffort}
                       onChange={(value) => handleLocalUpdate("reasoningEffort", value)}
                       disableFn={() => handleLocalReset("reasoningEffort")}
@@ -337,27 +330,18 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
                       }
                       options={[
                         ...(localModel.name.startsWith("gpt-5")
-                          ? [{ value: "minimal", label: "Minimal" }]
+                          ? [
+                              {
+                                value: "minimal",
+                                label: t("settings.modelEdit.options.reasoningEffort.minimal"),
+                              },
+                            ]
                           : []),
-                        { value: "low", label: "Low" },
-                        { value: "medium", label: "Medium" },
-                        { value: "high", label: "High" },
+                        { value: "low", label: t("settings.modelEdit.options.general.low") },
+                        { value: "medium", label: t("settings.modelEdit.options.general.medium") },
+                        { value: "high", label: t("settings.modelEdit.options.general.high") },
                       ]}
-                      helpText={
-                        <>
-                          <p>
-                            Controls the amount of reasoning effort the model uses. Higher effort
-                            provides more thorough reasoning but takes longer. Note: thinking tokens
-                            are not available yet!
-                          </p>
-                          <ul className="tw-mt-2 tw-space-y-1 tw-text-xs">
-                            <li>Minimal: Fastest responses, minimal reasoning (GPT-5 only)</li>
-                            <li>Low: Faster responses, basic reasoning (default)</li>
-                            <li>Medium: Balanced performance</li>
-                            <li>High: Thorough reasoning, slower responses</li>
-                          </ul>
-                        </>
-                      }
+                      helpText={t("settings.modelEdit.fields.reasoningEffort.help")}
                     />
                   </FormField>
 
@@ -366,26 +350,20 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
                     <FormField>
                       <ParameterControl
                         type="select"
-                        label="Verbosity"
+                        label={t("settings.modelEdit.fields.verbosity.label")}
                         value={localModel.verbosity}
                         onChange={(value) => handleLocalUpdate("verbosity", value)}
                         disableFn={() => handleLocalReset("verbosity")}
                         defaultValue={settings.verbosity ?? DEFAULT_MODEL_SETTING.VERBOSITY}
                         options={[
-                          { value: "low", label: "Low" },
-                          { value: "medium", label: "Medium" },
-                          { value: "high", label: "High" },
+                          { value: "low", label: t("settings.modelEdit.options.general.low") },
+                          {
+                            value: "medium",
+                            label: t("settings.modelEdit.options.general.medium"),
+                          },
+                          { value: "high", label: t("settings.modelEdit.options.general.high") },
                         ]}
-                        helpText={
-                          <>
-                            <p>Controls the length and detail of the model responses.</p>
-                            <ul className="tw-mt-2 tw-space-y-1 tw-text-xs">
-                              <li>Low: Concise, brief responses</li>
-                              <li>Medium: Balanced detail</li>
-                              <li>High: Detailed, comprehensive responses</li>
-                            </ul>
-                          </>
-                        }
+                        helpText={t("settings.modelEdit.fields.verbosity.help")}
                       />
                     </FormField>
                   )}

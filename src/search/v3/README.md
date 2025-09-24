@@ -318,7 +318,7 @@ interface Chunk {
 
 - **Enable Lexical Boosts**: Toggle for folder and graph relevance boosts
 - **Chunk Configuration**:
-  - Chunk Size: 6000 characters (uses CHUNK_SIZE constant)
+  - Chunk Size: 4000 characters (uses CHUNK_SIZE constant)
   - All relevant chunks included from matching notes
 - **Graph Boost Configuration**:
   - Max Candidates: 10 (performance cap)

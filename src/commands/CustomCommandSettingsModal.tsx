@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import React, { useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import { getModelKeyFromModel, useSettingsValue } from "@/settings/model";
+import { useTranslation } from "@/i18n";
 import { getModelDisplayText } from "@/components/ui/model-display";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
@@ -32,6 +33,7 @@ function CustomCommandSettingsModalContent({
   onCancel: () => void;
 }) {
   const settings = useSettingsValue();
+  const { t } = useTranslation();
   const activeModels = settings.activeModels
     .filter((m) => m.enabled)
     .map((model) => ({
@@ -61,7 +63,7 @@ function CustomCommandSettingsModalContent({
     }
 
     if (!command.content.trim()) {
-      newErrors.content = "Prompt is required";
+      newErrors.content = t("commands.validation.promptRequired");
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -75,31 +77,31 @@ function CustomCommandSettingsModalContent({
   return (
     <div className="tw-flex tw-flex-col tw-gap-4 tw-p-4">
       <div className="tw-flex tw-flex-col tw-gap-2">
-        <Label htmlFor="title">Name</Label>
+        <Label htmlFor="title">{t("commands.form.commandName")}</Label>
         <Input
           id="title"
           value={command.title}
           onChange={(e) => handleUpdate("title", e.target.value)}
-          placeholder="Enter command name"
+          placeholder={t("commands.placeholders.enterCommandName")}
         />
         {errors.title && <div className="tw-text-sm tw-text-error">{errors.title}</div>}
       </div>
 
       <div className="tw-flex tw-flex-col tw-gap-2">
-        <Label htmlFor="content">Prompt</Label>
+        <Label htmlFor="content">{t("commands.form.commandPrompt")}</Label>
         <CustomPromptSyntaxInstruction />
         <Textarea
           id="content"
           value={command.content}
           onChange={(e) => handleUpdate("content", e.target.value)}
-          placeholder="Enter command prompt"
+          placeholder={t("commands.placeholders.enterCommandPrompt")}
           className="tw-min-h-[200px]"
         />
         {errors.content && <div className="tw-text-sm tw-text-error">{errors.content}</div>}
       </div>
 
       <div className="tw-flex tw-flex-col tw-gap-2">
-        <Label htmlFor="modelKey">Model (Optional)</Label>
+        <Label htmlFor="modelKey">{t("commands.form.modelOptional")}</Label>
         <div className="tw-group tw-relative tw-w-full">
           <select
             value={command.modelKey}
@@ -126,7 +128,7 @@ function CustomCommandSettingsModalContent({
               "hover:tw-bg-interactive-hover hover:tw-text-normal"
             )}
           >
-            <option value="">Inherit from chat model</option>
+            <option value="">{t("commands.form.inheritFromChatModel")}</option>
             {activeModels.map((option) => (
               <option key={option.value} value={option.value.toString()}>
                 {option.label}
@@ -150,7 +152,7 @@ function CustomCommandSettingsModalContent({
           checked={command.showInContextMenu}
           onCheckedChange={(checked) => handleUpdate("showInContextMenu", checked)}
         />
-        <Label htmlFor="showInContextMenu">Show in context menu</Label>
+        <Label htmlFor="showInContextMenu">{t("commands.form.showInContextMenu")}</Label>
       </div>
 
       <div className="tw-flex tw-items-center tw-gap-2">
@@ -159,15 +161,15 @@ function CustomCommandSettingsModalContent({
           checked={command.showInSlashMenu}
           onCheckedChange={(checked) => handleUpdate("showInSlashMenu", checked)}
         />
-        <Label htmlFor="showInSlashMenu">Show in slash menu</Label>
+        <Label htmlFor="showInSlashMenu">{t("commands.form.showInSlashMenu")}</Label>
       </div>
 
       <div className="tw-flex tw-justify-end tw-gap-2">
         <Button variant="secondary" onClick={onCancel}>
-          Cancel
+          {t("common.buttons.cancel")}
         </Button>
         <Button variant="default" onClick={handleSubmit}>
-          Save
+          {t("common.buttons.save")}
         </Button>
       </div>
     </div>

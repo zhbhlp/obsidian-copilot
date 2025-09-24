@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTab } from "@/contexts/TabContext";
+import { useTranslation } from "@/i18n/useTranslation";
 import { getSettings } from "@/settings/model";
 import {
   ChatModelProviders,
@@ -63,6 +64,7 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
   isEmbeddingModel = false,
 }) => {
   const { modalContainer } = useTab();
+  const { t } = useTranslation();
   const settings = getSettings();
   const defaultProvider = isEmbeddingModel
     ? EmbeddingModelProviders.OPENAI
@@ -185,7 +187,7 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
 
   const handleAdd = () => {
     if (!validateFields()) {
-      new Notice("Please fill in all required fields");
+      new Notice(t("notifications.model.requiredFieldsError"));
       return;
     }
 
@@ -224,7 +226,7 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
 
   const handleVerify = async () => {
     if (!validateFields()) {
-      new Notice("Please fill in all required fields");
+      new Notice(t("notifications.model.requiredFieldsError"));
       return;
     }
 
@@ -232,11 +234,11 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
     try {
       const cleanedModel = getCleanedModel(model);
       await ping(cleanedModel);
-      new Notice("Model verification successful!");
+      new Notice(t("notifications.model.verificationSuccess"));
     } catch (err) {
       console.error(err);
       const errStr = err2String(err);
-      new Notice("Model verification failed: " + errStr);
+      new Notice(t("notifications.model.verificationFailed", { error: errStr }));
     } finally {
       setIsVerifying(false);
     }
@@ -248,12 +250,12 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
         case ChatModelProviders.OPENAI:
           return (
             <FormField
-              label="OpenAI Organization ID"
-              description="Enter OpenAI Organization ID if applicable"
+              label={t("settings.model.fields.openai.orgId.label")}
+              description={t("settings.model.fields.openai.orgId.description")}
             >
               <Input
                 type="text"
-                placeholder="Enter OpenAI Organization ID if applicable"
+                placeholder={t("settings.model.fields.openai.orgId.placeholder")}
                 value={model.openAIOrgId || ""}
                 onChange={(e) => setModel({ ...model, openAIOrgId: e.target.value })}
               />
@@ -263,14 +265,14 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
           return (
             <>
               <FormField
-                label="Instance Name"
+                label={t("settings.model.fields.azure.instanceName.label")}
                 required
                 error={errors.instanceName}
-                errorMessage="Instance name is required"
+                errorMessage={t("settings.model.fields.azure.instanceName.required")}
               >
                 <Input
                   type="text"
-                  placeholder="Enter Azure OpenAI API Instance Name"
+                  placeholder={t("settings.model.fields.azure.instanceName.placeholder")}
                   value={model.azureOpenAIApiInstanceName || ""}
                   onChange={(e) => {
                     setModel({ ...model, azureOpenAIApiInstanceName: e.target.value });
@@ -281,15 +283,15 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
 
               {!isEmbeddingModel ? (
                 <FormField
-                  label="Deployment Name"
+                  label={t("settings.model.fields.azure.deploymentName.label")}
                   required
                   error={errors.deploymentName}
-                  errorMessage="Deployment name is required"
-                  description="This is your actual model, no need to pass a model name separately."
+                  errorMessage={t("settings.model.fields.azure.deploymentName.required")}
+                  description={t("settings.model.fields.azure.deploymentName.description")}
                 >
                   <Input
                     type="text"
-                    placeholder="Enter Azure OpenAI API Deployment Name"
+                    placeholder={t("settings.model.fields.azure.deploymentName.placeholder")}
                     value={model.azureOpenAIApiDeploymentName || ""}
                     onChange={(e) => {
                       setModel({ ...model, azureOpenAIApiDeploymentName: e.target.value });
@@ -299,14 +301,16 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
                 </FormField>
               ) : (
                 <FormField
-                  label="Embedding Deployment Name"
+                  label={t("settings.model.fields.azure.embeddingDeploymentName.label")}
                   required
                   error={errors.embeddingDeploymentName}
-                  errorMessage="Embedding deployment name is required"
+                  errorMessage={t("settings.model.fields.azure.embeddingDeploymentName.required")}
                 >
                   <Input
                     type="text"
-                    placeholder="Enter Azure OpenAI API Embedding Deployment Name"
+                    placeholder={t(
+                      "settings.model.fields.azure.embeddingDeploymentName.placeholder"
+                    )}
                     value={model.azureOpenAIApiEmbeddingDeploymentName || ""}
                     onChange={(e) => {
                       setModel({ ...model, azureOpenAIApiEmbeddingDeploymentName: e.target.value });
@@ -317,14 +321,14 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
               )}
 
               <FormField
-                label="API Version"
+                label={t("settings.model.fields.azure.apiVersion.label")}
                 required
                 error={errors.apiVersion}
-                errorMessage="API version is required"
+                errorMessage={t("settings.model.fields.azure.apiVersion.required")}
               >
                 <Input
                   type="text"
-                  placeholder="Enter Azure OpenAI API Version"
+                  placeholder={t("settings.model.fields.azure.apiVersion.placeholder")}
                   value={model.azureOpenAIApiVersion || ""}
                   onChange={(e) => {
                     setModel({ ...model, azureOpenAIApiVersion: e.target.value });
@@ -349,11 +353,13 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
         className="tw-space-y-2 tw-rounded-lg tw-border tw-pt-4"
       >
         <div className="tw-flex tw-items-center tw-justify-between">
-          <Label>Additional {getProviderLabel(model.provider)} Settings</Label>
+          <Label>
+            {t("settings.model.additionalSettings", { provider: getProviderLabel(model.provider) })}
+          </Label>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="tw-w-9 tw-p-0">
               <ChevronDown className="tw-size-4" />
-              <span className="tw-sr-only">Toggle</span>
+              <span className="tw-sr-only">{t("common.toggle")}</span>
             </Button>
           </CollapsibleTrigger>
         </div>
@@ -393,22 +399,26 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
         ref={(el) => setDialogElement(el)}
       >
         <DialogHeader>
-          <DialogTitle>Add Custom {isEmbeddingModel ? "Embedding" : "Chat"} Model</DialogTitle>
-          <DialogDescription>Add a new model to your collection.</DialogDescription>
+          <DialogTitle>
+            {t("settings.model.dialog.title", {
+              type: isEmbeddingModel ? t("common.labels.embedding") : t("common.labels.chat"),
+            })}
+          </DialogTitle>
+          <DialogDescription>{t("settings.model.dialog.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="tw-space-y-3">
           <FormField
-            label="Model Name"
+            label={t("settings.model.fields.name.label")}
             required
             error={errors.name}
-            errorMessage="Model name is required"
+            errorMessage={t("settings.model.fields.name.required")}
           >
             <Input
               type="text"
-              placeholder={`Enter model name (e.g. ${
-                isEmbeddingModel ? "text-embedding-3-small" : "gpt-4"
-              })`}
+              placeholder={t("settings.model.fields.name.placeholder", {
+                example: isEmbeddingModel ? "text-embedding-3-small" : "gpt-4",
+              })}
               value={model.name}
               onChange={(e) => {
                 setModel({ ...model, name: e.target.value });
@@ -420,14 +430,23 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
           <FormField
             label={
               <div className="tw-flex tw-items-center tw-gap-1.5">
-                <span className="tw-leading-none">Display Name</span>
+                <span className="tw-leading-none">
+                  {t("settings.model.fields.displayName.label")}
+                </span>
                 <HelpTooltip
                   content={
                     <div className="tw-flex tw-flex-col tw-gap-0.5 tw-text-sm tw-text-muted">
-                      <div className="tw-text-[12px] tw-font-bold">Suggested format:</div>
-                      <div className="tw-text-accent">[Source]-[Payment]:[Pretty Model Name]</div>
+                      <div className="tw-text-[12px] tw-font-bold">
+                        {t("settings.model.fields.displayName.help.suggestedFormat")}
+                      </div>
+                      <div className="tw-text-accent">
+                        {t("settings.model.fields.displayName.help.providerModel", {
+                          provider: "[Source]-[Payment]",
+                          model: "[Pretty Model Name]",
+                        })}
+                      </div>
                       <div className="tw-text-[12px]">
-                        Example:
+                        {t("settings.model.fields.displayName.help.example")}
                         <li>Direct-Paid:Ds-r1</li>
                         <li>OpenRouter-Paid:Ds-r1</li>
                         <li>Perplexity-Paid:lg</li>
@@ -441,7 +460,7 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
           >
             <Input
               type="text"
-              placeholder="Custom display name (optional)"
+              placeholder={t("settings.model.fields.displayName.placeholder")}
               value={model.displayName || ""}
               onChange={(e) => {
                 setModel({ ...model, displayName: e.target.value });
@@ -449,10 +468,10 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
             />
           </FormField>
 
-          <FormField label="Provider">
+          <FormField label={t("settings.model.fields.provider.label")}>
             <Select value={model.provider} onValueChange={handleProviderChange}>
               <SelectTrigger>
-                <SelectValue placeholder="Select provider" />
+                <SelectValue placeholder={t("settings.model.fields.provider.placeholder")} />
               </SelectTrigger>
               <SelectContent container={dialogElement}>
                 {Object.values(
@@ -468,25 +487,30 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
             </Select>
           </FormField>
 
-          <FormField label="Base URL" description="Leave it blank, unless you are using a proxy.">
+          <FormField
+            label={t("settings.model.fields.baseUrl.label")}
+            description={t("settings.model.fields.baseUrl.description")}
+          >
             <Input
               type="text"
-              placeholder={getPlaceholderUrl() || "https://api.example.com/v1"}
+              placeholder={getPlaceholderUrl() || t("settings.model.fields.baseUrl.placeholder")}
               value={model.baseUrl || ""}
               onChange={(e) => setModel({ ...model, baseUrl: e.target.value })}
             />
           </FormField>
 
-          <FormField label="API Key">
+          <FormField label={t("settings.model.fields.apiKey.label")}>
             <PasswordInput
-              placeholder={`Enter ${providerInfo.label} API Key`}
+              placeholder={t("settings.model.fields.apiKey.placeholder", {
+                provider: providerInfo.label,
+              })}
               value={model.apiKey || ""}
               onChange={(value) => setModel({ ...model, apiKey: value })}
             />
             {providerInfo.keyManagementURL && (
               <p className="tw-text-xs tw-text-muted">
                 <a href={providerInfo.keyManagementURL} target="_blank" rel="noopener noreferrer">
-                  Get {providerInfo.label} API Key
+                  {t("settings.model.fields.apiKey.getKey", { provider: providerInfo.label })}
                 </a>
               </p>
             )}
@@ -495,11 +519,13 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
           <FormField
             label={
               <div className="tw-flex tw-items-center tw-gap-1.5">
-                <span className="tw-leading-none">Model Capabilities</span>
+                <span className="tw-leading-none">
+                  {t("settings.model.fields.capabilities.label")}
+                </span>
                 <HelpTooltip
                   content={
                     <div className="tw-text-sm tw-text-muted">
-                      Only used to display model capabilities, does not affect model functionality
+                      {t("settings.model.fields.capabilities.description")}
                     </div>
                   }
                   contentClassName="tw-max-w-96"
@@ -545,11 +571,13 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
             />
             <Label htmlFor="enable-cors">
               <div className="tw-flex tw-items-center tw-gap-0.5">
-                <span className="tw-text-xs md:tw-text-sm">CORS</span>
+                <span className="tw-text-xs md:tw-text-sm">
+                  {t("settings.model.fields.cors.label")}
+                </span>
                 <HelpTooltip
                   content={
                     <div className="tw-text-sm tw-text-muted">
-                      Only check this option when prompted that CORS is needed
+                      {t("settings.model.fields.cors.description")}
                     </div>
                   }
                   contentClassName="tw-max-w-96"
@@ -559,16 +587,16 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
           </div>
           <div className="tw-flex tw-gap-2 tw-text-xs md:tw-text-sm">
             <Button variant="secondary" onClick={handleAdd} disabled={isButtonDisabled()}>
-              Add Model
+              {t("settings.model.buttons.add")}
             </Button>
             <Button variant="secondary" onClick={handleVerify} disabled={isButtonDisabled()}>
               {isVerifying ? (
                 <>
                   <Loader2 className="tw-mr-2 tw-size-2 tw-animate-spin md:tw-size-4 " />
-                  Verify
+                  {t("settings.model.buttons.verify")}
                 </>
               ) : (
-                "Verify"
+                t("settings.model.buttons.verify")
               )}
             </Button>
           </div>

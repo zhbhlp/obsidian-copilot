@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/i18n";
 import { App, Modal } from "obsidian";
 import React from "react";
 import { createRoot, Root } from "react-dom/client";
@@ -16,20 +17,17 @@ function ConfirmModalContent({
   confirmButtonText: string;
   cancelButtonText: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="tw-flex tw-flex-col tw-gap-5">
       <div className="tw-whitespace-pre-wrap">{content}</div>
       <div className="tw-flex tw-justify-end tw-gap-2">
-        {cancelButtonText && (
-          <Button variant="secondary" onClick={onCancel}>
-            {cancelButtonText}
-          </Button>
-        )}
-        {confirmButtonText && (
-          <Button variant="default" onClick={onConfirm}>
-            {confirmButtonText}
-          </Button>
-        )}
+        <Button variant="secondary" onClick={onCancel}>
+          {cancelButtonText || t("modals.confirm.cancel")}
+        </Button>
+        <Button variant="default" onClick={onConfirm}>
+          {confirmButtonText || t("modals.confirm.continue")}
+        </Button>
       </div>
     </div>
   );
@@ -43,8 +41,8 @@ export class ConfirmModal extends Modal {
     private onConfirm: () => void,
     private content: string,
     title: string,
-    private confirmButtonText: string = "Continue",
-    private cancelButtonText: string = "Cancel"
+    private confirmButtonText?: string,
+    private cancelButtonText?: string
   ) {
     super(app);
     // https://docs.obsidian.md/Reference/TypeScript+API/Modal/setTitle
@@ -70,8 +68,8 @@ export class ConfirmModal extends Modal {
         content={this.content}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
-        confirmButtonText={this.confirmButtonText}
-        cancelButtonText={this.cancelButtonText}
+        confirmButtonText={this.confirmButtonText || ""}
+        cancelButtonText={this.cancelButtonText || ""}
       />
     );
   }

@@ -10,6 +10,9 @@ import {
   SettingKeyProviders,
   USER_SENDER,
 } from "@/constants";
+import { getTranslation } from "@/i18n/useTranslation";
+import { localeAtom } from "@/i18n/store";
+import { getDefaultStore } from "jotai";
 import { logInfo } from "@/logger";
 import { CopilotSettings } from "@/settings/model";
 import { ChatMessage } from "@/types/message";
@@ -20,7 +23,16 @@ import { BaseChain, RetrievalQAChain } from "langchain/chains";
 import moment from "moment";
 import { MarkdownView, Notice, TFile, Vault, normalizePath, requestUrl } from "obsidian";
 import { CustomModel } from "./aiParams";
+import { diffTrimmedLines } from "diff";
+import { APPLY_VIEW_TYPE, ApplyViewState } from "@/components/composer/ApplyView";
 export { err2String } from "@/errorFormat";
+
+// 获取当前翻译的工具函数
+function t(key: string, params?: Record<string, string | number>): string {
+  const store = getDefaultStore();
+  const locale = store.get(localeAtom);
+  return getTranslation(locale, key, params);
+}
 
 // Add custom error type at the top of the file
 interface APIError extends Error {
@@ -767,10 +779,13 @@ export function cleanMessageForCopy(message: string): string {
   return cleanedMessage;
 }
 
+/**
+ * 预览AI修改内容的差异并确认后插入
+ */
 export async function insertIntoEditor(message: string, replace: boolean = false) {
   let leaf = app.workspace.getMostRecentLeaf();
   if (!leaf) {
-    new Notice("No active leaf found.");
+    new Notice(t("notifications.editor.noActiveLeaf"));
     return;
   }
 
@@ -780,7 +795,7 @@ export async function insertIntoEditor(message: string, replace: boolean = false
   }
 
   if (!(leaf.view instanceof MarkdownView)) {
-    new Notice("Failed to open a markdown view.");
+    new Notice(t("notifications.editor.failedMarkdownView"));
     return;
   }
 
@@ -788,15 +803,81 @@ export async function insertIntoEditor(message: string, replace: boolean = false
   const cursorFrom = editor.getCursor("from");
   const cursorTo = editor.getCursor("to");
 
-  // Clean the message before inserting (removes think tags, writeToFile blocks, tool calls)
+  // 获取当前文件和文本内容
+  const activeFile = app.workspace.getActiveFile();
+  if (!activeFile) {
+    new Notice("没有找到当前活动文件");
+    return;
+  }
+
+  // Clean the message before processing
   const cleanedMessage = cleanMessageForCopy(message);
 
-  if (replace) {
-    editor.replaceRange(cleanedMessage, cursorFrom, cursorTo);
+  // 获取原始内容和生成新内容
+  const originalContent = await app.vault.read(activeFile);
+  let newContent: string;
+
+  if (replace && editor.getSelection()) {
+    // 替换模式：替换选中的文本
+    const selectedText = editor.getSelection();
+    newContent = originalContent.replace(selectedText, cleanedMessage);
   } else {
-    editor.replaceRange(cleanedMessage, cursorTo);
+    // 插入模式：在光标位置插入
+    const cursorOffset = editor.posToOffset(cursorTo);
+    newContent =
+      originalContent.slice(0, cursorOffset) + cleanedMessage + originalContent.slice(cursorOffset);
   }
-  new Notice("Message inserted into the active note.");
+
+  // 如果内容没有变化，直接插入
+  if (originalContent === newContent) {
+    if (replace) {
+      editor.replaceRange(cleanedMessage, cursorFrom, cursorTo);
+    } else {
+      editor.replaceRange(cleanedMessage, cursorTo);
+    }
+    new Notice(t("notifications.editor.messageInserted"));
+    return;
+  }
+
+  // 调用预览功能
+  const result = await showDiffPreview(activeFile.path, originalContent, newContent);
+
+  if (result === "accepted") {
+    new Notice("修改已应用");
+  } else if (result === "rejected") {
+    new Notice("修改已取消");
+  } else {
+    new Notice("操作已中止");
+  }
+}
+
+/**
+ * 显示差异预览界面
+ */
+async function showDiffPreview(
+  filePath: string,
+  originalContent: string,
+  newContent: string
+): Promise<"accepted" | "rejected" | "aborted"> {
+  const changes = diffTrimmedLines(originalContent, newContent, {
+    newlineIsToken: true,
+  });
+
+  return new Promise((resolve) => {
+    // 打开ApplyView预览界面
+    const leaf = app.workspace.getLeaf(true);
+    leaf.setViewState({
+      type: APPLY_VIEW_TYPE,
+      active: true,
+      state: {
+        changes: changes,
+        path: filePath,
+        resultCallback: (result: "accepted" | "rejected" | "aborted") => {
+          resolve(result);
+        },
+      } as ApplyViewState,
+    });
+  });
 }
 
 export function debounce<T extends (...args: any[]) => void>(

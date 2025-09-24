@@ -101,7 +101,7 @@ export class ContextProcessor {
             `File type ${note.extension} requires Copilot Plus mode for context processing.`
           );
           // Show user-facing notice about the restriction
-          new Notice(RESTRICTION_MESSAGES.NON_MARKDOWN_FILES_RESTRICTED);
+          new Notice(RESTRICTION_MESSAGES.NON_MARKDOWN_FILES_RESTRICTED());
           return;
         }
 

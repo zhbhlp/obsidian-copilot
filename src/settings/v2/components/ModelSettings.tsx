@@ -1,6 +1,7 @@
 import { CustomModel } from "@/aiParams";
 import { SettingItem } from "@/components/ui/setting-item";
 import { BUILTIN_CHAT_MODELS, BUILTIN_EMBEDDING_MODELS } from "@/constants";
+import { useTranslation } from "@/i18n";
 import EmbeddingManager from "@/LLMProviders/embeddingManager";
 import ProjectManager from "@/LLMProviders/projectManager";
 import { logError } from "@/logger";
@@ -13,6 +14,7 @@ import { Notice } from "obsidian";
 import React, { useState } from "react";
 
 export const ModelSettings: React.FC = () => {
+  const { t } = useTranslation();
   const settings = useSettingsValue();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddEmbeddingDialog, setShowAddEmbeddingDialog] = useState(false);
@@ -29,7 +31,7 @@ export const ModelSettings: React.FC = () => {
         "displayName",
         "dimensions",
       ]),
-      name: `${model.name} (copy)`,
+      name: `${model.name}${t("settings.models.copySuffix")}`,
     };
 
     const settingField: keyof CopilotSettings = isEmbeddingModel
@@ -83,8 +85,8 @@ export const ModelSettings: React.FC = () => {
       updatedModels[modelIndex] = updatedModel;
       updateSetting(settingField, updatedModels);
     } else {
-      new Notice("Could not find model to update");
-      logError("Could not find model to update:", originalModel);
+      new Notice(t("settings.models.updateError"));
+      logError(t("settings.model.modelNotFoundError"), originalModel);
     }
   };
 
@@ -120,7 +122,7 @@ export const ModelSettings: React.FC = () => {
 
     // Update the settings
     updateSetting("activeModels", updatedModels);
-    new Notice("Chat models refreshed successfully");
+    new Notice(t("settings.models.chatRefreshSuccess"));
   };
 
   const handleRefreshEmbeddingModels = () => {
@@ -132,7 +134,7 @@ export const ModelSettings: React.FC = () => {
 
     // Update the settings
     updateSetting("activeEmbeddingModels", updatedModels);
-    new Notice("Embedding models refreshed successfully");
+    new Notice(t("settings.models.embeddingRefreshSuccess"));
   };
 
   const handleEditModel = (model: CustomModel, isEmbeddingModel: boolean = false) => {
@@ -152,7 +154,7 @@ export const ModelSettings: React.FC = () => {
           onUpdateModel={handleTableUpdate}
           onReorderModels={(newModels) => handleModelReorder(newModels)}
           onRefresh={handleRefreshChatModels}
-          title="Chat Models"
+          title={t("settings.models.chatModels.title")}
         />
 
         {/* model add dialog */}
@@ -171,8 +173,8 @@ export const ModelSettings: React.FC = () => {
         <div className="tw-space-y-4">
           <SettingItem
             type="slider"
-            title="Conversation turns in context"
-            description="The number of previous conversation turns to include in the context. Default is 15 turns, i.e. 30 messages."
+            title={t("settings.models.conversationTurns.title")}
+            description={t("settings.models.conversationTurns.description")}
             value={settings.contextTurns}
             onChange={(value) => updateSetting("contextTurns", value)}
             min={1}
@@ -192,7 +194,7 @@ export const ModelSettings: React.FC = () => {
           onUpdateModel={handleEmbeddingModelUpdate}
           onReorderModels={(newModels) => handleModelReorder(newModels, true)}
           onRefresh={handleRefreshEmbeddingModels}
-          title="Embedding Models"
+          title={t("settings.models.embeddingModels.title")}
         />
 
         {/* Embedding model add dialog */}

@@ -41,6 +41,7 @@ import React, {
 } from "react";
 import { useDropzone } from "react-dropzone";
 import ContextControl from "./ContextControl";
+import { useTranslation } from "@/i18n";
 
 interface ChatInputProps {
   inputMessage: string;
@@ -91,6 +92,7 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
     },
     ref
   ) => {
+    const { t } = useTranslation();
     const [contextUrls, setContextUrls] = useState<string[]>([]);
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -114,9 +116,9 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
     );
     const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
     const loadingMessages = [
-      "Loading the project context...",
-      "Processing context files...",
-      "If you have many files in context, this can take a while...",
+      t("chatInput.loading.projectContext"),
+      t("chatInput.loading.processingFiles"),
+      t("chatInput.loading.manyFilesWarning"),
     ];
 
     useImperativeHandle(ref, () => ({
@@ -533,7 +535,7 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
                 <button
                   className="remove-image-button"
                   onClick={() => setSelectedImages((prev) => prev.filter((_, i) => i !== index))}
-                  title="Remove image"
+                  title={t("chatInput.image.removeTooltip")}
                 >
                   <X className="tw-size-4" />
                 </button>
@@ -555,8 +557,8 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
             ref={textAreaRef}
             className="tw-max-h-40 tw-min-h-[60px] tw-w-full tw-resize-none tw-overflow-y-auto tw-rounded-md tw-border-none tw-bg-transparent tw-px-2 tw-text-sm tw-text-normal placeholder:tw-text-sm placeholder:tw-text-muted/60 focus-visible:tw-ring-0"
             placeholder={
-              "Ask anything. [[ for notes. / for custom prompts. " +
-              (isCopilotPlus ? "@ for tools." : "")
+              t("chatInput.placeholder.base") +
+              (isCopilotPlus ? t("chatInput.placeholder.tools") : "")
             }
             value={inputMessage}
             onChange={handleInputChange}
@@ -568,7 +570,7 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
           {/* Overlay that appears when dragging */}
           {isDragActive && (
             <div className="tw-absolute tw-inset-0 tw-flex tw-items-center tw-justify-center tw-rounded-md tw-border tw-border-dashed tw-bg-primary">
-              <span>Drop images here...</span>
+              <span>{t("chatInput.dragDrop.dropImagesHere")}</span>
             </div>
           )}
         </div>
@@ -577,7 +579,7 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
           {isGenerating ? (
             <div className="tw-flex tw-items-center tw-gap-1 tw-px-1 tw-text-sm tw-text-muted">
               <Loader2 className="tw-size-3 tw-animate-spin" />
-              <span>Generating...</span>
+              <span>{t("chatInput.status.generating")}</span>
             </div>
           ) : (
             <div className="tw-min-w-0 tw-flex-1">
@@ -607,7 +609,7 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
                 onClick={() => onStopGenerating()}
               >
                 <StopCircle className="tw-size-4" />
-                Stop
+                {t("chatInput.button.stop")}
               </Button>
             ) : (
               <>
@@ -636,7 +638,9 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
                         <Image className="tw-size-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent className="tw-px-1 tw-py-0.5">Add image(s)</TooltipContent>
+                    <TooltipContent className="tw-px-1 tw-py-0.5">
+                      {t("chatInput.button.addImageTooltip")}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <Button
@@ -646,7 +650,7 @@ const ChatInput = forwardRef<{ focus: () => void }, ChatInputProps>(
                   onClick={() => onSendMessage()}
                 >
                   <CornerDownLeft className="!tw-size-3" />
-                  <span>chat</span>
+                  <span>{t("chatInput.button.chat")}</span>
                 </Button>
               </>
             )}

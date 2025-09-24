@@ -3,12 +3,14 @@ import { App, Modal } from "obsidian";
 import { createRoot } from "react-dom/client";
 import { Root } from "react-dom/client";
 import { Button } from "@/components/ui/button";
+import { t, useTranslation } from "@/i18n";
 import { isPlusModel, navigateToPlusPage } from "@/plusUtils";
 import { PLUS_UTM_MEDIUMS } from "@/constants";
 import { ExternalLink } from "lucide-react";
 import { getSettings } from "@/settings/model";
 
 function CopilotPlusExpiredModalContent({ onCancel }: { onCancel: () => void }) {
+  const { t } = useTranslation();
   const settings = getSettings();
   const isUsingPlusModels =
     isPlusModel(settings.defaultModelKey) && isPlusModel(settings.embeddingModelKey);
@@ -29,7 +31,7 @@ function CopilotPlusExpiredModalContent({ onCancel }: { onCancel: () => void }) 
       </div>
       <div className="tw-flex tw-w-full tw-justify-end tw-gap-2">
         <Button variant="ghost" onClick={onCancel}>
-          Close
+          {t("common.buttons.close")}
         </Button>
         <Button
           variant="default"
@@ -37,7 +39,7 @@ function CopilotPlusExpiredModalContent({ onCancel }: { onCancel: () => void }) 
             navigateToPlusPage(PLUS_UTM_MEDIUMS.EXPIRED_MODAL);
           }}
         >
-          Renew Now <ExternalLink className="tw-size-4" />
+          {t("common.buttons.refresh")} <ExternalLink className="tw-size-4" />
         </Button>
       </div>
     </div>
@@ -51,7 +53,7 @@ export class CopilotPlusExpiredModal extends Modal {
     super(app);
     // https://docs.obsidian.md/Reference/TypeScript+API/Modal/setTitle
     // @ts-ignore
-    this.setTitle("Thanks for being a Copilot Plus user 👋");
+    this.setTitle(t("modals.plusExpired.title"));
   }
 
   onOpen() {

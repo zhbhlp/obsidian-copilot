@@ -1,6 +1,9 @@
 // DEPRECATED: v3 semantic indexing uses MemoryIndexManager (JSONL snapshots). This file remains only
 // for legacy Orama-based flows and should not be referenced by new code.
 import { CustomError } from "@/error";
+import { getTranslation } from "@/i18n/useTranslation";
+import { localeAtom } from "@/i18n/store";
+import { getDefaultStore } from "jotai";
 import EmbeddingsManager from "@/LLMProviders/embeddingManager";
 import { CopilotSettings, getSettings, subscribeToSettingsChange } from "@/settings/model";
 import { Orama } from "@orama/orama";
@@ -8,6 +11,13 @@ import { Notice, Platform, TFile } from "obsidian";
 import { DBOperations } from "./dbOperations";
 import { IndexEventHandler } from "./indexEventHandler";
 import { IndexOperations } from "./indexOperations";
+
+// 获取当前翻译的工具函数
+function t(key: string, params?: Record<string, string | number>): string {
+  const store = getDefaultStore();
+  const locale = store.get(localeAtom);
+  return getTranslation(locale, key, params);
+}
 
 export default class VectorStoreManager {
   private static instance: VectorStoreManager;
@@ -104,7 +114,7 @@ export default class VectorStoreManager {
   public async indexVaultToVectorStore(overwrite?: boolean): Promise<number> {
     await this.waitForInitialization();
     if (Platform.isMobile && getSettings().disableIndexOnMobile) {
-      new Notice("Indexing is disabled on mobile devices");
+      new Notice(t("notifications.index.disabledOnMobile"));
       return 0;
     }
     return this.indexOps.indexVaultToVectorStore(overwrite);

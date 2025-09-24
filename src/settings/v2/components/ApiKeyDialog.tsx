@@ -6,6 +6,7 @@ import { ObsidianNativeSelect } from "@/components/ui/obsidian-native-select";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ChatModelProviders, ProviderSettingsKeyMap, SettingKeyProviders } from "@/constants";
 import { getDecryptedKey } from "@/encryptionService";
+import { useTranslation } from "@/i18n";
 import ProjectManager from "@/LLMProviders/projectManager";
 import { logError } from "@/logger";
 import { updateSetting, useSettingsValue } from "@/settings/model";
@@ -38,6 +39,7 @@ interface SelectedModelInfo {
 }
 
 function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
+  const { t } = useTranslation();
   const settings = useSettingsValue();
 
   const [expandedProvider, setExpandedProvider] = useState<SettingKeyProviders | null>(null);
@@ -116,7 +118,9 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
           if (!response.ok) {
             const msg = err2String(await response.json());
             logError(msg);
-            throw new Error(`Failed to fetch models: ${response.statusText} \n detail: ` + msg);
+            throw new Error(
+              t("errors.api.fetchModelsFailed", { statusText: response.statusText, detail: msg })
+            );
           }
           return response;
         } finally {
@@ -129,16 +133,14 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
         // First try with normal fetch
         response = await tryFetch(false);
       } catch (firstError) {
-        console.log("First fetch attempt failed, trying with safeFetch...");
+        console.log(t("debug.messages.firstFetchFailed"));
         try {
           // Second try with safeFetch
           response = await tryFetch(true);
         } catch (error) {
           const msg =
-            "\nwithout CORS Error: " +
-            err2String(firstError) +
-            "\nwith CORS Error: " +
-            err2String(error);
+            t("errors.api.withoutCorsError", { error: err2String(firstError) }) +
+            t("errors.api.withCorsError", { error: err2String(error) });
           throw new Error(msg);
         }
       }
@@ -150,11 +152,14 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
       setModelsByProvider((prev) => ({ ...prev, [provider]: standardModels }));
       setLoadingProvider(null);
     } catch (error) {
-      console.error(`Error fetching models for ${provider}:`, error);
+      console.error(t("debug.errors.fetchModelsError", { provider }), error);
       setErrorProvider(provider);
       setLoadingProvider(null);
       new Notice(
-        `Failed to load models for ${getProviderLabel(provider)}: ${err2String(error)}`,
+        t("settings.apiKey.messages.failedToLoad", {
+          provider: getProviderLabel(provider),
+          error: err2String(error),
+        }),
         5000
       );
     }
@@ -162,7 +167,7 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
 
   const verifyModel = async () => {
     if (!selectedModel) {
-      new Notice("Please select a model first");
+      new Notice(t("settings.apiKey.errors.selectModelFirst"));
       return;
     }
 
@@ -186,17 +191,16 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
       if (!existingModel) {
         const updatedModels = [...settings.activeModels, customModel];
         updateSetting("activeModels", updatedModels);
-        new Notice(
-          `Model ${selectedModel.name} verified successfully and added to your models list!`
-        );
+        new Notice(t("settings.apiKey.messages.modelVerified", { model: selectedModel.name }));
       } else {
-        new Notice(
-          `Model ${selectedModel.name} verified successfully! It already exists in your models list.`
-        );
+        new Notice(t("settings.apiKey.messages.modelAlreadyExists", { model: selectedModel.name }));
       }
     } catch (error) {
-      console.error("Model verification failed:", error);
-      new Notice("Model verification failed: " + err2String(error), 10000);
+      console.error(t("debug.errors.modelVerificationFailed"), error);
+      new Notice(
+        t("settings.apiKey.messages.verificationFailed", { error: err2String(error) }),
+        10000
+      );
     } finally {
       setVerifyingModel(false);
     }
@@ -205,10 +209,8 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
   return (
     <div className="tw-max-h-[600px] tw-overflow-y-auto tw-p-4 sm:tw-max-w-[500px]">
       <div className="tw-mb-4">
-        <h2 className="tw-text-xl tw-font-bold">AI Provider Settings</h2>
-        <p className="tw-text-sm tw-text-muted">
-          Configure your AI providers by adding their API keys.
-        </p>
+        <h2 className="tw-text-xl tw-font-bold">{t("settings.apiKey.dialog.title")}</h2>
+        <p className="tw-text-sm tw-text-muted">{t("settings.apiKey.dialog.description")}</p>
       </div>
 
       <div className="tw-space-y-6 tw-py-4">
@@ -247,7 +249,7 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
                       variant="secondary"
                       className="tw-flex tw-w-full tw-items-center tw-justify-center tw-gap-2 tw-whitespace-nowrap tw-px-4 tw-py-2"
                     >
-                      Add Model
+                      {t("settings.model.addModel")}
                       {expandedProvider === item.provider ? (
                         <ChevronUp className="tw-ml-1 tw-size-4" />
                       ) : (
@@ -264,7 +266,9 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
                       rel="noopener noreferrer"
                       className="tw-text-[10px] tw-text-accent hover:tw-text-accent-hover sm:tw-text-xs"
                     >
-                      Get {getProviderLabel(item.provider)} Key
+                      {t("settings.apiKey.buttons.getKey", {
+                        provider: getProviderLabel(item.provider),
+                      })}
                     </a>
                   )}
                 </div>
@@ -273,8 +277,8 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
                 <CollapsibleContent className="tw-rounded-md tw-p-3">
                   <div className="tw-flex tw-flex-col tw-gap-2">
                     <FormField
-                      label="Model"
-                      description="Add the currently selected model to model List. After adding, please check the Model Tab."
+                      label={t("common.labels.model")}
+                      description={t("settings.apiKey.descriptions.addModel")}
                     >
                       <div>
                         <div className="tw-flex tw-items-center tw-gap-2">
@@ -314,7 +318,7 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
                               value={
                                 selectedModel?.provider === item.provider ? selectedModel.id : ""
                               }
-                              placeholder="Select Model"
+                              placeholder={t("settings.apiKey.placeholders.selectModel")}
                               disabled={
                                 !item.apiKey ||
                                 loadingProvider === item.provider ||
@@ -338,33 +342,35 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
                               {verifyingModel ? (
                                 <Loader2 className="tw-mr-2 tw-size-4 tw-animate-spin" />
                               ) : (
-                                "Add"
+                                t("common.buttons.add")
                               )}
                             </Button>
                           </div>
                         </div>
                         <div className="tw-mt-1 tw-text-xs">
                           {loadingProvider === item.provider && (
-                            <div className="tw-p-1 tw-text-muted">Loading models...</div>
+                            <div className="tw-p-1 tw-text-muted">
+                              {t("settings.apiKey.status.loading")}
+                            </div>
                           )}
                           {errorProvider === item.provider && (
                             <div className="tw-p-1 tw-text-error">
-                              Failed to load models.
+                              {t("settings.apiKey.status.failed")}
                               {modelsByProvider[item.provider] === null &&
-                                " Check API Key or network."}
+                                ` ${t("settings.apiKey.status.checkKey")}`}
                             </div>
                           )}
                           {modelsByProvider[item.provider] &&
                             modelsByProvider[item.provider]!.length === 0 && (
                               <div className="tw-p-1 tw-text-muted">
-                                No models available for this provider.
+                                {t("settings.apiKey.status.noModels")}
                               </div>
                             )}
                           {modelsByProvider[item.provider] === undefined &&
                             errorProvider !== item.provider &&
                             loadingProvider !== item.provider && (
                               <div className="tw-p-1 tw-text-muted">
-                                Click to load models or expand to try again if API key was changed.
+                                {t("settings.apiKey.status.clickToLoad")}
                               </div>
                             )}
                         </div>
@@ -379,7 +385,7 @@ function ApiKeyModalContent({ onClose }: ApiKeyModalContentProps) {
       </div>
 
       <div className="tw-mt-4 tw-flex tw-justify-end">
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t("common.buttons.close")}</Button>
       </div>
     </div>
   );

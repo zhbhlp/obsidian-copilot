@@ -12,6 +12,9 @@ import { ContextCache, ProjectContextCache } from "@/cache/projectContextCache";
 import { ChainType } from "@/chainFactory";
 import CopilotView from "@/components/CopilotView";
 import { CHAT_VIEWTYPE, VAULT_VECTOR_STORE_STRATEGY } from "@/constants";
+import { getTranslation } from "@/i18n/useTranslation";
+import { localeAtom } from "@/i18n/store";
+import { getDefaultStore } from "jotai";
 import { logError, logInfo, logWarn } from "@/logger";
 import CopilotPlugin from "@/main";
 import { Mention } from "@/mentions/Mention";
@@ -24,6 +27,13 @@ import { App, Notice, TFile } from "obsidian";
 import { BrevilabsClient } from "./brevilabsClient";
 import ChainManager from "./chainManager";
 import { ProjectLoadTracker } from "./projectLoadTracker";
+
+// 获取当前翻译的工具函数
+function t(key: string, params?: Record<string, string | number>): string {
+  const store = getDefaultStore();
+  const locale = store.get(localeAtom);
+  return getTranslation(locale, key, params);
+}
 
 export default class ProjectManager {
   public static instance: ProjectManager;
@@ -721,7 +731,9 @@ modified: ${stat ? new Date(stat.mtime).toISOString() : "unknown"}`;
       return "";
     } catch (error) {
       logError(`Failed to process YouTube URL ${youtubeUrl}: ${error}`);
-      new Notice(`Failed to process YouTube URL ${youtubeUrl}: ${err2String(error)}`);
+      new Notice(
+        t("notifications.project.youtubeError", { url: youtubeUrl, error: err2String(error) })
+      );
       return "";
     }
   }
@@ -829,13 +841,13 @@ modified: ${stat ? new Date(stat.mtime).toISOString() : "unknown"}`;
       }
 
       logInfo(`[retryFailedItem] Successfully retried ${failedItem.type} item: ${failedItem.path}`);
-      new Notice(`Retry successful: ${failedItem.path}`);
+      new Notice(t("notifications.project.retrySuccess", { path: failedItem.path }));
     } catch (error) {
       logError(
         `[retryFailedItem] Failed to retry ${failedItem.type} item ${failedItem.path}:`,
         error
       );
-      new Notice(`Retry failed: ${err2String(error)}`);
+      new Notice(t("notifications.project.retryFailed", { error: err2String(error) }));
     }
   }
 

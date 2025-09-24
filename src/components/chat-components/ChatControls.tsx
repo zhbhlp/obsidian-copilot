@@ -7,12 +7,14 @@ import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-
 import { SettingSwitch } from "@/components/ui/setting-switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PLUS_UTM_MEDIUMS } from "@/constants";
+import { t, useTranslation } from "@/i18n";
 import { logError } from "@/logger";
 import { navigateToPlusPage, useIsPlusUser } from "@/plusUtils";
 import { updateSetting, useSettingsValue } from "@/settings/model";
 import { Docs4LLMParser } from "@/tools/FileParserManager";
 import { isRateLimitError } from "@/utils/rateLimitUtils";
 import { DropdownMenu, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+
 import {
   AlertTriangle,
   ChevronDown,
@@ -38,14 +40,14 @@ export async function refreshVaultIndex() {
       // Use VectorStoreManager for semantic search indexing
       const VectorStoreManager = (await import("@/search/vectorStoreManager")).default;
       const count = await VectorStoreManager.getInstance().indexVaultToVectorStore(false);
-      new Notice(`Semantic search index refreshed with ${count} documents.`);
+      new Notice(t("notifications.index.refreshed", { count }));
     } else {
       // V3 search builds indexes on demand
-      new Notice("Lexical search builds indexes on demand. No manual indexing required.");
+      new Notice(t("notifications.index.lexicalNoBuild"));
     }
   } catch (error) {
     console.error("Error refreshing vault index:", error);
-    new Notice("Failed to refresh vault index. Check console for details.");
+    new Notice(t("notifications.index.refreshError"));
   }
 }
 
@@ -58,21 +60,21 @@ export async function forceReindexVault() {
       // Use VectorStoreManager for semantic search indexing
       const VectorStoreManager = (await import("@/search/vectorStoreManager")).default;
       const count = await VectorStoreManager.getInstance().indexVaultToVectorStore(true);
-      new Notice(`Semantic search index rebuilt with ${count} documents.`);
+      new Notice(t("notifications.index.reindexed", { count }));
     } else {
       // V3 search builds indexes on demand
-      new Notice("Lexical search builds indexes on demand. No manual indexing required.");
+      new Notice(t("notifications.index.lexicalNoBuild"));
     }
   } catch (error) {
     console.error("Error force reindexing vault:", error);
-    new Notice("Failed to force reindex vault. Check console for details.");
+    new Notice(t("notifications.index.reindexError"));
   }
 }
 
 export async function reloadCurrentProject() {
   const currentProject = getCurrentProject();
   if (!currentProject) {
-    new Notice("No project is currently selected to reload.");
+    new Notice(t("notifications.project.noProjectSelected"));
     return;
   }
 
@@ -91,16 +93,16 @@ export async function reloadCurrentProject() {
     const plugin = (app as any).plugins.getPlugin("copilot");
     if (plugin && plugin.projectManager) {
       await plugin.projectManager.getProjectContext(currentProject.id);
-      new Notice(`Project context for "${currentProject.name}" reloaded successfully.`);
+      new Notice(t("notifications.project.contextReloaded", { name: currentProject.name }));
     } else {
-      throw new Error("Copilot plugin or ProjectManager not available.");
+      throw new Error(t("errors.projectManagerNotAvailable"));
     }
   } catch (error) {
     logError("Error reloading project context:", error);
 
     // Check if this is a rate limit error and let the FileParserManager notice handle it
     if (!isRateLimitError(error)) {
-      new Notice("Failed to reload project context. Check console for details.");
+      new Notice(t("notifications.project.reloadContextError"));
     }
     // If it's a rate limit error, don't show generic failure message - let the rate limit notice show
   } finally {
@@ -111,7 +113,7 @@ export async function reloadCurrentProject() {
 export async function forceRebuildCurrentProjectContext() {
   const currentProject = getCurrentProject();
   if (!currentProject) {
-    new Notice("No project is currently selected to rebuild.");
+    new Notice(t("notifications.project.noProjectSelected"));
     return;
   }
 
@@ -121,7 +123,7 @@ export async function forceRebuildCurrentProjectContext() {
       try {
         setProjectLoading(true); // Start loading indicator
         new Notice(
-          `Force rebuilding context for project: ${currentProject.name}... This will take some time and re-fetch all data.`,
+          t("notifications.project.rebuildingContext", { name: currentProject.name }),
           10000 // Longer notice as this is a bigger operation
         );
 
@@ -130,7 +132,7 @@ export async function forceRebuildCurrentProjectContext() {
         Docs4LLMParser.resetRateLimitNoticeTimer();
 
         await ProjectContextCache.getInstance().clearForProject(currentProject);
-        new Notice(`Cache for project "${currentProject.name}" has been cleared.`);
+        new Notice(t("notifications.project.cacheCleared", { name: currentProject.name }));
 
         // Step 2: Trigger a full reload from scratch.
         // getProjectContext will call loadProjectContext as the cache is now empty.
@@ -138,18 +140,16 @@ export async function forceRebuildCurrentProjectContext() {
         const plugin = (app as any).plugins.getPlugin("copilot");
         if (plugin && plugin.projectManager) {
           await plugin.projectManager.getProjectContext(currentProject.id);
-          new Notice(
-            `Project context for "${currentProject.name}" rebuilt successfully from scratch.`
-          );
+          new Notice(t("notifications.project.contextRebuilt", { name: currentProject.name }));
         } else {
-          throw new Error("Copilot plugin or ProjectManager not available for rebuild.");
+          throw new Error(t("errors.projectManagerNotAvailable"));
         }
       } catch (error) {
         logError("Error force rebuilding project context:", error);
 
         // Check if this is a rate limit error and let the FileParserManager notice handle it
         if (!isRateLimitError(error)) {
-          new Notice("Failed to force rebuild project context. Check console for details.");
+          new Notice(t("notifications.project.rebuildContextError"));
         }
         // If it's a rate limit error, don't show generic failure message - let the rate limit notice show
       } finally {
@@ -157,8 +157,8 @@ export async function forceRebuildCurrentProjectContext() {
       }
     },
     // Confirmation message with a strong warning
-    `DANGER: This will permanently delete all cached data (markdown, web URLs, YouTube transcripts, and processed file content) for the project "${currentProject.name}" from both memory and disk. The context will then be rebuilt from scratch, re-fetching all remote data and re-processing all local files. This cannot be undone. Are you absolutely sure?`,
-    "Force Rebuild Project Context" // Modal title
+    t("notifications.project.rebuildConfirm", { name: currentProject.name }),
+    t("notifications.project.rebuildConfirmTitle") // Modal title
   );
   modal.open();
 }
@@ -178,6 +178,7 @@ export function ChatControls({
   onModeChange,
   onCloseProject,
 }: ChatControlsProps) {
+  const { t } = useTranslation();
   const settings = useSettingsValue();
   const [selectedChain, setSelectedChain] = useChainType();
   const isPlusUser = useIsPlusUser();
@@ -197,15 +198,15 @@ export function ChatControls({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost2" size="fit" className="tw-ml-1 tw-text-sm tw-text-muted">
-              {selectedChain === ChainType.LLM_CHAIN && "chat (free)"}
-              {selectedChain === ChainType.VAULT_QA_CHAIN && "vault QA (free)"}
+              {selectedChain === ChainType.LLM_CHAIN && t("chatControls.modes.chatFree")}
+              {selectedChain === ChainType.VAULT_QA_CHAIN && t("chatControls.modes.vaultQAFree")}
               {selectedChain === ChainType.COPILOT_PLUS_CHAIN && (
                 <div className="tw-flex tw-items-center tw-gap-1">
                   <Sparkles className="tw-size-4" />
-                  copilot plus
+                  {t("chatControls.modes.copilotPlus")}
                 </div>
               )}
-              {selectedChain === ChainType.PROJECT_CHAIN && "projects (alpha)"}
+              {selectedChain === ChainType.PROJECT_CHAIN && t("chatControls.modes.projectsAlpha")}
               <ChevronDown className="tw-mt-0.5 tw-size-5" />
             </Button>
           </DropdownMenuTrigger>
@@ -215,14 +216,14 @@ export function ChatControls({
                 handleModeChange(ChainType.LLM_CHAIN);
               }}
             >
-              chat (free)
+              {t("chatControls.modes.chatFree")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
                 handleModeChange(ChainType.VAULT_QA_CHAIN);
               }}
             >
-              vault QA (free)
+              {t("chatControls.modes.vaultQAFree")}
             </DropdownMenuItem>
             {isPlusUser ? (
               <DropdownMenuItem
@@ -232,7 +233,7 @@ export function ChatControls({
               >
                 <div className="tw-flex tw-items-center tw-gap-1">
                   <Sparkles className="tw-size-4" />
-                  copilot plus
+                  {t("chatControls.modes.copilotPlus")}
                 </div>
               </DropdownMenuItem>
             ) : (
@@ -242,7 +243,7 @@ export function ChatControls({
                   onCloseProject?.();
                 }}
               >
-                copilot plus
+                {t("chatControls.modes.copilotPlus")}
                 <SquareArrowOutUpRight className="tw-size-3" />
               </DropdownMenuItem>
             )}
@@ -255,7 +256,7 @@ export function ChatControls({
                 }}
               >
                 <LibraryBig className="tw-size-4" />
-                projects (alpha)
+                {t("chatControls.modes.projectsAlpha")}
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem
@@ -264,7 +265,7 @@ export function ChatControls({
                   onCloseProject?.();
                 }}
               >
-                copilot plus
+                {t("chatControls.modes.copilotPlus")}
                 <SquareArrowOutUpRight className="tw-size-3" />
               </DropdownMenuItem>
             )}
@@ -274,34 +275,49 @@ export function ChatControls({
       <div>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost2" size="icon" title="New Chat" onClick={onNewChat}>
+            <Button
+              variant="ghost2"
+              size="icon"
+              title={t("chatControls.buttons.newChat")}
+              onClick={onNewChat}
+            >
               <MessageCirclePlus className="tw-size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>New Chat</TooltipContent>
+          <TooltipContent>{t("chatControls.buttons.newChat")}</TooltipContent>
         </Tooltip>
         {!settings.autosaveChat && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost2" size="icon" title="Save Chat as Note" onClick={onSaveAsNote}>
+              <Button
+                variant="ghost2"
+                size="icon"
+                title={t("chatControls.buttons.saveChatAsNote")}
+                onClick={onSaveAsNote}
+              >
                 <Download className="tw-size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Save Chat as Note</TooltipContent>
+            <TooltipContent>{t("chatControls.buttons.saveChatAsNote")}</TooltipContent>
           </Tooltip>
         )}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost2" size="icon" title="Chat History" onClick={onLoadHistory}>
+            <Button
+              variant="ghost2"
+              size="icon"
+              title={t("chatControls.buttons.chatHistory")}
+              onClick={onLoadHistory}
+            >
               <History className="tw-size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Chat History</TooltipContent>
+          <TooltipContent>{t("chatControls.buttons.chatHistory")}</TooltipContent>
         </Tooltip>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost2" size="icon" title="Advanced Settings">
+            <Button variant="ghost2" size="icon" title={t("chatControls.buttons.advancedSettings")}>
               <MoreHorizontal className="tw-size-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -315,7 +331,7 @@ export function ChatControls({
             >
               <div className="tw-flex tw-items-center tw-gap-2">
                 <Sparkles className="tw-size-4" />
-                Suggested Prompt
+                {t("chatControls.toggles.suggestedPrompt")}
               </div>
               <SettingSwitch checked={settings.showSuggestedPrompts} />
             </DropdownMenuItem>
@@ -328,7 +344,7 @@ export function ChatControls({
             >
               <div className="tw-flex tw-items-center tw-gap-2">
                 <FileText className="tw-size-4" />
-                Relevant Note
+                {t("chatControls.toggles.relevantNote")}
               </div>
               <SettingSwitch checked={settings.showRelevantNotes} />
             </DropdownMenuItem>
@@ -339,14 +355,14 @@ export function ChatControls({
                   onSelect={() => reloadCurrentProject()}
                 >
                   <RefreshCw className="tw-size-4" />
-                  Reload Current Project
+                  {t("chatControls.buttons.reloadCurrentProject")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="tw-flex tw-items-center tw-gap-2"
                   onSelect={() => forceRebuildCurrentProjectContext()}
                 >
                   <AlertTriangle className="tw-size-4" />
-                  Force Rebuild Context
+                  {t("chatControls.buttons.forceRebuildContext")}
                 </DropdownMenuItem>
               </>
             ) : (
@@ -356,7 +372,7 @@ export function ChatControls({
                   onSelect={() => refreshVaultIndex()}
                 >
                   <RefreshCw className="tw-size-4" />
-                  Refresh Vault Index
+                  {t("chatControls.buttons.refreshVaultIndex")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="tw-flex tw-items-center tw-gap-2"
@@ -364,14 +380,14 @@ export function ChatControls({
                     const modal = new ConfirmModal(
                       app,
                       () => forceReindexVault(),
-                      "This will delete and rebuild your entire vault index from scratch. This operation cannot be undone. Are you sure you want to proceed?",
-                      "Force Reindex Vault"
+                      t("notifications.index.reindexConfirm"),
+                      t("notifications.index.reindexConfirmTitle")
                     );
                     modal.open();
                   }}
                 >
                   <AlertTriangle className="tw-size-4" />
-                  Force Reindex Vault
+                  {t("chatControls.buttons.forceReindexVault")}
                 </DropdownMenuItem>
               </>
             )}

@@ -19,6 +19,7 @@ import { MessageRepository } from "@/core/MessageRepository";
 import { encryptAllKeys } from "@/encryptionService";
 import { logInfo } from "@/logger";
 import { logFileManager } from "@/logFileManager";
+import { t } from "@/i18n";
 import { checkIsPlusUser } from "@/plusUtils";
 import VectorStoreManager from "@/search/vectorStoreManager";
 import { CopilotSettingTab } from "@/settings/SettingsPage";
@@ -322,7 +323,7 @@ export default class CopilotPlugin extends Plugin {
   async loadCopilotChatHistory() {
     const chatFiles = await this.getChatHistoryFiles();
     if (chatFiles.length === 0) {
-      new Notice("No chat history found.");
+      new Notice(t("notifications.commands.noChatHistoryFound"));
       return;
     }
     new LoadChatHistoryModal(this.app, chatFiles, this.loadChatHistory.bind(this)).open();

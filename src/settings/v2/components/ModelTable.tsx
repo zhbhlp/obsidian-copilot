@@ -48,6 +48,7 @@ import {
   Trash2,
 } from "lucide-react";
 import React, { ForwardRefExoticComponent, RefAttributes, useRef } from "react";
+import { useTranslation } from "@/i18n";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,27 +96,31 @@ interface ModelTableHeaderProps {
 /**
  * Renders the model table header with a title and aligned action buttons.
  */
-const ModelTableHeader: React.FC<ModelTableHeaderProps> = ({ title, onRefresh, onAdd }) => (
-  <div className="tw-mb-3 tw-flex tw-flex-col tw-gap-2 md:tw-flex-row md:tw-items-center md:tw-justify-between">
-    <h3 className="tw-text-xl tw-font-bold">{title}</h3>
-    <div className="tw-flex tw-flex-col tw-gap-2 sm:tw-flex-row sm:tw-items-center sm:tw-justify-end">
-      {onRefresh && (
-        <Button
-          onClick={onRefresh}
-          variant="secondary"
-          className="tw-flex tw-items-center tw-gap-2"
-        >
-          <RefreshCw className="tw-size-2 md:tw-size-4" />
-          Refresh Built-ins
+const ModelTableHeader: React.FC<ModelTableHeaderProps> = ({ title, onRefresh, onAdd }) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="tw-mb-3 tw-flex tw-flex-col tw-gap-2 md:tw-flex-row md:tw-items-center md:tw-justify-between">
+      <h3 className="tw-text-xl tw-font-bold">{title}</h3>
+      <div className="tw-flex tw-flex-col tw-gap-2 sm:tw-flex-row sm:tw-items-center sm:tw-justify-end">
+        {onRefresh && (
+          <Button
+            onClick={onRefresh}
+            variant="secondary"
+            className="tw-flex tw-items-center tw-gap-2"
+          >
+            <RefreshCw className="tw-size-2 md:tw-size-4" />
+            {t("settings.modelTable.refreshBuiltins")}
+          </Button>
+        )}
+        <Button onClick={onAdd} variant="default" className="tw-flex tw-items-center tw-gap-2">
+          <Plus className="tw-size-2 md:tw-size-4" />
+          {t("settings.modelTable.addModel")}
         </Button>
-      )}
-      <Button onClick={onAdd} variant="default" className="tw-flex tw-items-center tw-gap-2">
-        <Plus className="tw-size-2 md:tw-size-4" />
-        Add Model
-      </Button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const renderCapabilities = (model: CustomModel) => {
   return (
@@ -162,12 +167,13 @@ const ModelCard: React.FC<ModelCardProps> = ({
   id,
   containerRef,
 }) => {
+  const { t } = useTranslation();
   const dropdownActions: MobileCardDropdownAction<CustomModel>[] = [];
 
   if (onEdit) {
     dropdownActions.push({
       icon: <PencilLine className="tw-size-4" />,
-      label: "Edit",
+      label: t("common.buttons.edit"),
       onClick: onEdit,
     });
   }
@@ -175,7 +181,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
   if (onCopy && !model.core) {
     dropdownActions.push({
       icon: <Copy className="tw-size-4" />,
-      label: "Copy",
+      label: t("common.buttons.copy"),
       onClick: onCopy,
     });
   }
@@ -183,7 +189,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
   if (!model.core) {
     dropdownActions.push({
       icon: <Trash2 className="tw-size-4" />,
-      label: "Delete",
+      label: t("common.buttons.delete"),
       onClick: () => onDelete(getModelKeyFromModel(model)),
       variant: "destructive",
     });
@@ -193,7 +199,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
     <div className="tw-flex tw-justify-around">
       {!model.isEmbeddingModel && (
         <div className="tw-flex tw-items-center tw-gap-2">
-          <span className="tw-text-sm">Enabled</span>
+          <span className="tw-text-sm">{t("settings.modelTable.enabled")}</span>
           <Checkbox
             checked={model.enabled}
             onCheckedChange={(checked: boolean) => onUpdateModel({ ...model, enabled: checked })}
@@ -201,7 +207,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
         </div>
       )}
       <div className="tw-flex tw-items-center tw-gap-2">
-        <span className="tw-text-sm">CORS</span>
+        <span className="tw-text-sm">{t("settings.modelTable.cors")}</span>
         <Checkbox
           checked={model.enableCors}
           onCheckedChange={(checked: boolean) => onUpdateModel({ ...model, enableCors: checked })}
@@ -229,7 +235,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
           ? {
               icon: <Pencil className="tw-size-4" />,
               onClick: onEdit,
-              tooltip: "Edit Model",
+              tooltip: t("settings.editModel"),
             }
           : undefined
       }
@@ -248,6 +254,7 @@ const DesktopSortableTableRow: React.FC<{
   isEmbeddingModel: boolean;
   containerRef: React.RefObject<HTMLDivElement>;
 }> = ({ model, onEdit, onCopy, onDelete, onUpdateModel, isEmbeddingModel, containerRef }) => {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: getModelKeyFromModel(model),
     disabled: model.core,
@@ -328,14 +335,14 @@ const DesktopSortableTableRow: React.FC<{
                 {onEdit && (
                   <DropdownMenuItem onClick={() => onEdit(model)}>
                     <PencilLine className="tw-mr-2 tw-size-4" />
-                    Edit
+                    {t("common.buttons.edit")}
                   </DropdownMenuItem>
                 )}
 
                 {onCopy && !model.core && (
                   <DropdownMenuItem onClick={() => onCopy(model)}>
                     <Copy className="tw-mr-2 tw-size-4" />
-                    Copy
+                    {t("common.buttons.copy")}
                   </DropdownMenuItem>
                 )}
 
@@ -345,7 +352,7 @@ const DesktopSortableTableRow: React.FC<{
                     className="tw-text-error"
                   >
                     <Trash2 className="tw-mr-2 tw-size-4" />
-                    Delete
+                    {t("common.buttons.delete")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -380,6 +387,7 @@ export const ModelTable: React.FC<ModelTableProps> = ({
   onRefresh,
   title,
 }) => {
+  const { t } = useTranslation();
   const isEmbeddingModel = !!(models.length > 0 && models[0].isEmbeddingModel);
 
   const sensors = useSensors(
@@ -516,12 +524,22 @@ export const ModelTable: React.FC<ModelTableProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead className="tw-w-6 tw-px-2"></TableHead>
-                  <TableHead className="tw-pl-0">Model</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead className="tw-text-center">Capabilities</TableHead>
-                  {!isEmbeddingModel && <TableHead className="tw-text-center">Enable</TableHead>}
-                  <TableHead className="tw-text-center">CORS</TableHead>
-                  <TableHead className="tw-w-[100px] tw-text-center">Actions</TableHead>
+                  <TableHead className="tw-pl-0">
+                    {t("settings.modelTable.headers.model")}
+                  </TableHead>
+                  <TableHead>{t("settings.modelTable.headers.provider")}</TableHead>
+                  <TableHead className="tw-text-center">
+                    {t("settings.modelTable.headers.capabilities")}
+                  </TableHead>
+                  {!isEmbeddingModel && (
+                    <TableHead className="tw-text-center">
+                      {t("settings.modelTable.headers.enable")}
+                    </TableHead>
+                  )}
+                  <TableHead className="tw-text-center">{t("settings.modelTable.cors")}</TableHead>
+                  <TableHead className="tw-w-[100px] tw-text-center">
+                    {t("settings.modelTable.headers.actions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="tw-relative">

@@ -14,17 +14,19 @@ import { Key, Loader2 } from "lucide-react";
 import { Notice } from "obsidian";
 import React, { useState } from "react";
 import { ApiKeyDialog } from "./ApiKeyDialog";
-
-const ChainType2Label: Record<ChainType, string> = {
-  [ChainType.LLM_CHAIN]: "Chat",
-  [ChainType.VAULT_QA_CHAIN]: "Vault QA (Basic)",
-  [ChainType.COPILOT_PLUS_CHAIN]: "Copilot Plus",
-  [ChainType.PROJECT_CHAIN]: "Projects (alpha)",
-};
+import { useTranslation, LOCALE_NAMES, SUPPORTED_LOCALES } from "@/i18n";
 
 export const BasicSettings: React.FC = () => {
   const settings = useSettingsValue();
+  const { t, locale, setLocale } = useTranslation();
   const [isChecking, setIsChecking] = useState(false);
+
+  const ChainType2Label: Record<ChainType, string> = {
+    [ChainType.LLM_CHAIN]: t("settings.chainType.chat"),
+    [ChainType.VAULT_QA_CHAIN]: t("settings.chainType.vaultQA"),
+    [ChainType.COPILOT_PLUS_CHAIN]: t("settings.chainType.copilotPlus"),
+    [ChainType.PROJECT_CHAIN]: t("settings.chainType.projects"),
+  };
   const [conversationNoteName, setConversationNoteName] = useState(
     settings.defaultConversationNoteName || "{$date}_{$time}__{$topic}"
   );
@@ -39,7 +41,12 @@ export const BasicSettings: React.FC = () => {
       const missingVars = requiredVars.filter((v) => !format.includes(v));
 
       if (missingVars.length > 0) {
-        new Notice(`Error: Missing required variables: ${missingVars.join(", ")}`, 4000);
+        new Notice(
+          t("settings.conversationFilename.errors.missingVariables", {
+            variables: missingVars.join(", "),
+          }),
+          4000
+        );
         return;
       }
 
@@ -51,7 +58,7 @@ export const BasicSettings: React.FC = () => {
         .replace(/\{\$topic}/g, "");
 
       if (illegalChars.test(formatWithoutVars)) {
-        new Notice(`Error: Format contains illegal characters (\\/:*?"<>|)`, 4000);
+        new Notice(t("settings.conversationFilename.errors.illegalCharacters"), 4000);
         return;
       }
 
@@ -68,9 +75,9 @@ export const BasicSettings: React.FC = () => {
       // Save settings
       updateSetting("defaultConversationNoteName", format);
       setConversationNoteName(format);
-      new Notice(`Format applied successfully! Example: ${customFileName}`, 4000);
+      new Notice(t("settings.conversationFilename.success", { example: customFileName }), 4000);
     } catch (error) {
-      new Notice(`Error applying format: ${error.message}`, 4000);
+      new Notice(t("settings.conversationFilename.applyError", { error: error.message }), 4000);
     } finally {
       setIsChecking(false);
     }
@@ -92,27 +99,37 @@ export const BasicSettings: React.FC = () => {
 
       {/* General Section */}
       <section>
-        <div className="tw-mb-3 tw-text-xl tw-font-bold">General</div>
+        <div className="tw-mb-3 tw-text-xl tw-font-bold">{t("settings.sections.general")}</div>
         <div className="tw-space-y-4">
+          {/* Language Selection */}
+          <SettingItem
+            type="select"
+            title={t("settings.language.label")}
+            description={t("settings.language.description")}
+            value={locale}
+            onChange={(value) => setLocale(value as any)}
+            options={SUPPORTED_LOCALES.map((loc) => ({
+              label: LOCALE_NAMES[loc],
+              value: loc,
+            }))}
+          />
+
           <div className="tw-space-y-4">
             {/* API Key Section */}
             <SettingItem
               type="custom"
-              title="API Keys"
+              title={t("settings.apiKeys.title")}
               description={
                 <div className="tw-flex tw-items-center tw-gap-1.5">
-                  <span className="tw-leading-none">
-                    Configure API keys for different AI providers
-                  </span>
+                  <span className="tw-leading-none">{t("settings.apiKeys.description")}</span>
                   <HelpTooltip
                     content={
                       <div className="tw-flex tw-max-w-96 tw-flex-col tw-gap-2 tw-py-4">
                         <div className="tw-text-sm tw-font-medium tw-text-accent">
-                          API key required for chat and QA features
+                          {t("settings.apiKeys.helpTitle")}
                         </div>
                         <div className="tw-text-xs tw-text-muted">
-                          To enable chat and QA functionality, please provide an API key from your
-                          selected provider.
+                          {t("settings.apiKeys.helpDescription")}
                         </div>
                       </div>
                     }
@@ -127,33 +144,38 @@ export const BasicSettings: React.FC = () => {
                 variant="secondary"
                 className="tw-flex tw-w-full tw-items-center tw-justify-center tw-gap-2 sm:tw-w-auto sm:tw-justify-start"
               >
-                Set Keys
+                {t("settings.apiKeys.setKeys")}
                 <Key className="tw-size-4" />
               </Button>
             </SettingItem>
           </div>
           <SettingItem
             type="select"
-            title="Default Chat Model"
+            title={t("settings.defaultChatModel.title")}
             description={
               <div className="tw-flex tw-items-center tw-gap-1.5">
-                <span className="tw-leading-none">Select the Chat model to use</span>
+                <span className="tw-leading-none">
+                  {t("settings.defaultChatModel.description")}
+                </span>
                 <HelpTooltip
                   content={
                     <div className="tw-flex tw-max-w-96 tw-flex-col tw-gap-2 tw-py-4">
                       <div className="tw-text-sm tw-font-medium tw-text-accent">
-                        Default model is OpenRouter Gemini 2.5 Flash
+                        {t("settings.defaultChatModel.helpTitle")}
                       </div>
                       <div className="tw-text-xs tw-text-muted">
-                        Set your OpenRouter API key in &apos;API keys&apos; to use this model, or
-                        select a different model from another provider.
+                        {t("settings.defaultChatModel.helpDescription")}
                       </div>
                     </div>
                   }
                 />
               </div>
             }
-            value={defaultModelActivated ? settings.defaultModelKey : "Select Model"}
+            value={
+              defaultModelActivated
+                ? settings.defaultModelKey
+                : t("settings.defaultChatModel.selectModel")
+            }
             onChange={(value) => {
               const selectedModel = settings.activeModels.find(
                 (m) => m.enabled && getModelKeyFromModel(m) === value
@@ -170,43 +192,48 @@ export const BasicSettings: React.FC = () => {
             options={
               defaultModelActivated
                 ? enableActivatedModels
-                : [{ label: "Select Model", value: "Select Model" }, ...enableActivatedModels]
+                : [
+                    {
+                      label: t("settings.defaultChatModel.selectModel"),
+                      value: t("settings.defaultChatModel.selectModel"),
+                    },
+                    ...enableActivatedModels,
+                  ]
             }
-            placeholder="Model"
+            placeholder={t("settings.placeholders.model")}
           />
 
           {/* Basic Configuration Group */}
           <SettingItem
             type="select"
-            title="Default Mode"
+            title={t("settings.defaultMode.title")}
             description={
               <div className="tw-flex tw-items-center tw-gap-1.5">
-                <span className="tw-leading-none">Select the default chat mode</span>
+                <span className="tw-leading-none">{t("settings.defaultMode.description")}</span>
                 <HelpTooltip
                   content={
                     <div className="tw-flex tw-max-w-96 tw-flex-col tw-gap-2">
                       <ul className="tw-pl-4 tw-text-sm tw-text-muted">
                         <li>
-                          <strong>Chat:</strong> Regular chat mode for general conversations and
-                          tasks. <i>Free to use with your own API key.</i>
+                          <strong>{t("settings.chainType.chat")}:</strong>{" "}
+                          {t("settings.defaultMode.help.chat")}
                         </li>
                         <li>
-                          <strong>Vault QA (Basic):</strong> Ask questions about your vault content
-                          with semantic search. <i>Free to use with your own API key.</i>
+                          <strong>{t("settings.chainType.vaultQA")}:</strong>{" "}
+                          {t("settings.defaultMode.help.vaultQA")}
                         </li>
                         <li>
-                          <strong>Copilot Plus:</strong> Covers all features of the 2 free modes,
-                          plus advanced paid features including chat context menu, advanced search,
-                          AI agents, and more. Check out{" "}
+                          <strong>{t("settings.chainType.copilotPlus")}:</strong>{" "}
+                          {t("settings.defaultMode.help.copilotPlus")}{" "}
                           <a
                             href={createPlusPageUrl(PLUS_UTM_MEDIUMS.MODE_SELECT_TOOLTIP)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="tw-text-accent hover:tw-text-accent-hover"
                           >
-                            obsidiancopilot.com
+                            {t("settings.defaultMode.help.copilotPlusLink")}
                           </a>{" "}
-                          for more details.
+                          {t("settings.defaultMode.help.copilotPlusEnd")}
                         </li>
                       </ul>
                     </div>
@@ -224,66 +251,68 @@ export const BasicSettings: React.FC = () => {
 
           <SettingItem
             type="select"
-            title="Open Plugin In"
-            description="Choose where to open the plugin"
+            title={t("settings.openPluginIn.title")}
+            description={t("settings.openPluginIn.description")}
             value={settings.defaultOpenArea}
             onChange={(value) => updateSetting("defaultOpenArea", value as DEFAULT_OPEN_AREA)}
             options={[
-              { label: "Sidebar View", value: DEFAULT_OPEN_AREA.VIEW },
-              { label: "Editor", value: DEFAULT_OPEN_AREA.EDITOR },
+              { label: t("settings.openPluginIn.sidebarView"), value: DEFAULT_OPEN_AREA.VIEW },
+              { label: t("settings.openPluginIn.editor"), value: DEFAULT_OPEN_AREA.EDITOR },
             ]}
           />
 
           <SettingItem
             type="text"
-            title="Default Conversation Folder Name"
-            description="The default folder name where chat conversations will be saved. Default is 'copilot/copilot-conversations'"
+            title={t("settings.conversationFolder.title")}
+            description={t("settings.conversationFolder.description")}
             value={settings.defaultSaveFolder}
             onChange={(value) => updateSetting("defaultSaveFolder", value)}
-            placeholder="copilot/copilot-conversations"
+            placeholder={t("settings.placeholders.folderPath")}
           />
 
           <SettingItem
             type="text"
-            title="Default Conversation Tag"
-            description="The default tag to be used when saving a conversation. Default is 'ai-conversations'"
+            title={t("settings.conversationTag.title")}
+            description={t("settings.conversationTag.description")}
             value={settings.defaultConversationTag}
             onChange={(value) => updateSetting("defaultConversationTag", value)}
-            placeholder="ai-conversations"
+            placeholder={t("settings.placeholders.conversationTag")}
           />
 
           <SettingItem
             type="custom"
-            title="Conversation Filename Template"
+            title={t("settings.conversationFilename.title")}
             description={
               <div className="tw-flex tw-items-start tw-gap-1.5 ">
                 <span className="tw-leading-none">
-                  Customize the format of saved conversation note names.
+                  {t("settings.conversationFilename.description")}
                 </span>
                 <HelpTooltip
                   content={
                     <div className="tw-flex tw-max-w-96 tw-flex-col tw-gap-2 tw-py-4">
                       <div className="tw-text-sm tw-font-medium tw-text-accent">
-                        Note: All the following variables must be included in the template.
+                        {t("settings.conversationFilename.helpTitle")}
                       </div>
                       <div>
                         <div className="tw-text-sm tw-font-medium tw-text-muted">
-                          Available variables:
+                          {t("settings.conversationFilename.helpDescription")}
                         </div>
                         <ul className="tw-pl-4 tw-text-sm tw-text-muted">
                           <li>
-                            <strong>{"{$date}"}</strong>: Date in YYYYMMDD format
+                            <strong>{"{$date}"}</strong>:{" "}
+                            {t("settings.conversationFilename.variables.date")}
                           </li>
                           <li>
-                            <strong>{"{$time}"}</strong>: Time in HHMMSS format
+                            <strong>{"{$time}"}</strong>:{" "}
+                            {t("settings.conversationFilename.variables.time")}
                           </li>
                           <li>
-                            <strong>{"{$topic}"}</strong>: Chat conversation topic
+                            <strong>{"{$topic}"}</strong>:{" "}
+                            {t("settings.conversationFilename.variables.topic")}
                           </li>
                         </ul>
                         <i className="tw-mt-2 tw-text-sm tw-text-muted">
-                          Example: {"{$date}_{$time}__{$topic}"} →
-                          20250114_153232__polish_this_article_[[Readme]]
+                          {t("settings.conversationFilename.example")}
                         </i>
                       </div>
                     </div>
@@ -299,7 +328,7 @@ export const BasicSettings: React.FC = () => {
                   "tw-min-w-[80px] tw-grow tw-transition-all tw-duration-200",
                   isChecking ? "tw-w-[80px]" : "tw-w-[120px]"
                 )}
-                placeholder="{$date}_{$time}__{$topic}"
+                placeholder={t("settings.placeholders.fileNameTemplate")}
                 value={conversationNoteName}
                 onChange={(e) => setConversationNoteName(e.target.value)}
                 disabled={isChecking}
@@ -313,10 +342,10 @@ export const BasicSettings: React.FC = () => {
                 {isChecking ? (
                   <>
                     <Loader2 className="tw-mr-2 tw-size-4 tw-animate-spin" />
-                    Apply
+                    {t("common.buttons.apply")}
                   </>
                 ) : (
-                  "Apply"
+                  t("common.buttons.apply")
                 )}
               </Button>
             </div>
@@ -325,24 +354,24 @@ export const BasicSettings: React.FC = () => {
           {/* Feature Toggle Group */}
           <SettingItem
             type="switch"
-            title="Autosave Chat"
-            description="Automatically saves the chat after every user message and AI response."
+            title={t("settings.features.autosaveChat.title")}
+            description={t("settings.features.autosaveChat.description")}
             checked={settings.autosaveChat}
             onCheckedChange={(checked) => updateSetting("autosaveChat", checked)}
           />
 
           <SettingItem
             type="switch"
-            title="Generate AI Chat Title on Save"
-            description="When enabled, uses an AI model to generate a concise title for saved chat notes. When disabled, uses the first 10 words of the first user message."
+            title={t("settings.features.generateAIChatTitle.title")}
+            description={t("settings.features.generateAIChatTitle.description")}
             checked={settings.generateAIChatTitleOnSave}
             onCheckedChange={(checked) => updateSetting("generateAIChatTitleOnSave", checked)}
           />
 
           <SettingItem
             type="switch"
-            title="Include Current Note in Context Menu"
-            description="Automatically include the current note in the chat context menu by default when sending messages to the AI."
+            title={t("settings.features.includeCurrentNote.title")}
+            description={t("settings.features.includeCurrentNote.description")}
             checked={settings.includeActiveNoteAsContext}
             onCheckedChange={(checked) => {
               updateSetting("includeActiveNoteAsContext", checked);
@@ -351,8 +380,8 @@ export const BasicSettings: React.FC = () => {
 
           <SettingItem
             type="switch"
-            title="Images in Markdown"
-            description="Pass embedded images in markdown to the AI along with the text. Only works with multimodal models."
+            title={t("settings.features.imagesInMarkdown.title")}
+            description={t("settings.features.imagesInMarkdown.description")}
             checked={settings.passMarkdownImages}
             onCheckedChange={(checked) => {
               updateSetting("passMarkdownImages", checked);
@@ -361,16 +390,16 @@ export const BasicSettings: React.FC = () => {
 
           <SettingItem
             type="switch"
-            title="Suggested Prompts"
-            description="Show suggested prompts in the chat view"
+            title={t("settings.features.suggestedPrompts.title")}
+            description={t("settings.features.suggestedPrompts.description")}
             checked={settings.showSuggestedPrompts}
             onCheckedChange={(checked) => updateSetting("showSuggestedPrompts", checked)}
           />
 
           <SettingItem
             type="switch"
-            title="Relevant Notes"
-            description="Show relevant notes in the chat view"
+            title={t("settings.features.relevantNotes.title")}
+            description={t("settings.features.relevantNotes.description")}
             checked={settings.showRelevantNotes}
             onCheckedChange={(checked) => updateSetting("showRelevantNotes", checked)}
           />

@@ -1,4 +1,5 @@
 // src/components/SourcesModal.tsx
+import { t } from "@/i18n";
 import { App, Modal } from "obsidian";
 
 export class SourcesModal extends Modal {
@@ -15,7 +16,7 @@ export class SourcesModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h2", { text: "Sources" });
+    contentEl.createEl("h2", { text: t("modals.sources.title") });
 
     // Display all sources sorted by score (already sorted from chain)
     this.createSourceList(contentEl, this.sources);

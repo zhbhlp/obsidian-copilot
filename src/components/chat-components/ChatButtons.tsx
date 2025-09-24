@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Platform } from "obsidian";
 import React from "react";
+import { useTranslation } from "@/i18n";
 
 interface ChatButtonsProps {
   message: ChatMessage;
@@ -38,6 +39,8 @@ export const ChatButtons: React.FC<ChatButtonsProps> = ({
   onShowSources,
   hasSources,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div
       className={cn("tw-flex tw-gap-1", {
@@ -48,27 +51,32 @@ export const ChatButtons: React.FC<ChatButtonsProps> = ({
         <>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost2" size="fit" onClick={onCopy} title="Copy">
+              <Button variant="ghost2" size="fit" onClick={onCopy} title={t("chat.buttons.copy")}>
                 {isCopied ? <Check className="tw-size-4" /> : <Copy className="tw-size-4" />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Copy</TooltipContent>
+            <TooltipContent>{t("chat.buttons.copy")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button onClick={onEdit} variant="ghost2" size="fit" title="Edit">
+              <Button onClick={onEdit} variant="ghost2" size="fit" title={t("chat.buttons.edit")}>
                 <PenSquare className="tw-size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Edit</TooltipContent>
+            <TooltipContent>{t("chat.buttons.edit")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button onClick={onDelete} variant="ghost2" size="fit" title="Delete">
+              <Button
+                onClick={onDelete}
+                variant="ghost2"
+                size="fit"
+                title={t("chat.buttons.delete")}
+              >
                 <Trash2 className="tw-size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Delete</TooltipContent>
+            <TooltipContent>{t("chat.buttons.delete")}</TooltipContent>
           </Tooltip>
         </>
       ) : (
@@ -76,11 +84,16 @@ export const ChatButtons: React.FC<ChatButtonsProps> = ({
           {hasSources && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={onShowSources} variant="ghost2" size="fit" title="Show Sources">
+                <Button
+                  onClick={onShowSources}
+                  variant="ghost2"
+                  size="fit"
+                  title={t("chat.buttons.showSources")}
+                >
                   <LibraryBig className="tw-size-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Show Sources</TooltipContent>
+              <TooltipContent>{t("chat.buttons.showSources")}</TooltipContent>
             </Tooltip>
           )}
           <Tooltip>
@@ -89,36 +102,46 @@ export const ChatButtons: React.FC<ChatButtonsProps> = ({
                 onClick={onInsertIntoEditor}
                 variant="ghost2"
                 size="fit"
-                title="Insert / Replace at cursor"
+                title={t("chat.buttons.insertAtCursor")}
               >
                 <TextCursorInput className="tw-size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Insert / Replace at cursor</TooltipContent>
+            <TooltipContent>{t("chat.buttons.insertAtCursor")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost2" size="fit" onClick={onCopy} title="Copy">
+              <Button variant="ghost2" size="fit" onClick={onCopy} title={t("chat.buttons.copy")}>
                 {isCopied ? <Check className="tw-size-4" /> : <Copy className="tw-size-4" />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Copy</TooltipContent>
+            <TooltipContent>{t("chat.buttons.copy")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button onClick={onRegenerate} variant="ghost2" size="fit" title="Regenerate">
+              <Button
+                onClick={onRegenerate}
+                variant="ghost2"
+                size="fit"
+                title={t("chat.buttons.regenerate")}
+              >
                 <RotateCw className="tw-size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Regenerate</TooltipContent>
+            <TooltipContent>{t("chat.buttons.regenerate")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button onClick={onDelete} variant="ghost2" size="fit" title="Delete">
+              <Button
+                onClick={onDelete}
+                variant="ghost2"
+                size="fit"
+                title={t("chat.buttons.delete")}
+              >
                 <Trash2 className="tw-size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Delete</TooltipContent>
+            <TooltipContent>{t("chat.buttons.delete")}</TooltipContent>
           </Tooltip>
         </>
       )}

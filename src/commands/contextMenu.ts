@@ -1,13 +1,20 @@
 import { getCommandId, sortCommandsByOrder } from "@/commands/customCommandUtils";
 import { getCachedCustomCommands } from "@/commands/state";
 import { COMMAND_IDS } from "@/constants";
+import { getTranslation } from "@/i18n/useTranslation";
+import { localeAtom } from "@/i18n/store";
+import { getDefaultStore } from "jotai";
 import { Menu } from "obsidian";
 import { CustomCommand } from "./type";
 
 export function registerContextMenu(menu: Menu) {
+  const store = getDefaultStore();
+  const locale = store.get(localeAtom);
+  const t = (key: string) => getTranslation(locale, key);
+
   // Create the main "Copilot" submenu
   menu.addItem((item) => {
-    item.setTitle("Copilot");
+    item.setTitle(t("contextMenu.copilot.title"));
     (item as any).setSubmenu();
 
     const submenu = (item as any).submenu;
@@ -15,7 +22,7 @@ export function registerContextMenu(menu: Menu) {
 
     // Add the main selection command
     submenu.addItem((subItem: any) => {
-      subItem.setTitle("Add selection to chat context").onClick(() => {
+      subItem.setTitle(t("contextMenu.addSelection.title")).onClick(() => {
         (app as any).commands.executeCommandById(
           `copilot:${COMMAND_IDS.ADD_SELECTION_TO_CHAT_CONTEXT}`
         );
@@ -23,7 +30,7 @@ export function registerContextMenu(menu: Menu) {
     });
 
     submenu.addItem((subItem: any) => {
-      subItem.setTitle("Trigger quick command").onClick(() => {
+      subItem.setTitle(t("contextMenu.quickCommand.title")).onClick(() => {
         (app as any).commands.executeCommandById(`copilot:${COMMAND_IDS.TRIGGER_QUICK_COMMAND}`);
       });
     });

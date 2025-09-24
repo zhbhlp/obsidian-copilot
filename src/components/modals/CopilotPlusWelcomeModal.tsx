@@ -3,6 +3,7 @@ import { App, Modal } from "obsidian";
 import { createRoot } from "react-dom/client";
 import { Root } from "react-dom/client";
 import { Button } from "@/components/ui/button";
+import { t, useTranslation } from "@/i18n";
 import {
   DEFAULT_COPILOT_PLUS_CHAT_MODEL,
   DEFAULT_COPILOT_PLUS_EMBEDDING_MODEL,
@@ -19,6 +20,7 @@ function CopilotPlusWelcomeModalContent({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const settings = getSettings();
   return (
     <div className="tw-flex tw-flex-col tw-gap-4">
@@ -55,10 +57,10 @@ function CopilotPlusWelcomeModalContent({
       </div>
       <div className="tw-flex tw-w-full tw-justify-end tw-gap-2">
         <Button variant="ghost" onClick={onCancel}>
-          Apply Later
+          {t("common.buttons.cancel")}
         </Button>
         <Button variant="default" onClick={onConfirm}>
-          Apply Now
+          {t("common.buttons.apply")}
         </Button>
       </div>
     </div>
@@ -72,7 +74,7 @@ export class CopilotPlusWelcomeModal extends Modal {
     super(app);
     // https://docs.obsidian.md/Reference/TypeScript+API/Modal/setTitle
     // @ts-ignore
-    this.setTitle("Welcome to Copilot Plus 🚀");
+    this.setTitle(t("modals.plusWelcome.title"));
   }
 
   onOpen() {

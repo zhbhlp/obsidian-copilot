@@ -4,6 +4,7 @@ import { type CopilotSettings } from "@/settings/model";
 import { v4 as uuidv4 } from "uuid";
 import { ChainType } from "./chainFactory";
 import { PromptSortStrategy } from "./types";
+import { t } from "@/i18n";
 
 export const BREVILABS_API_BASE_URL = "https://api.brevilabs.com/v1";
 export const CHAT_VIEWTYPE = "copilot-chat-view";
@@ -98,7 +99,7 @@ export const VAULT_NOTE_TAG = "vault_note";
 export const RETRIEVED_DOCUMENT_TAG = "retrieved_document";
 export const EMPTY_INDEX_ERROR_MESSAGE =
   "Copilot index does not exist. Please index your vault first!\n\n1. Set a working embedding model in QA settings. If it's not a local model, don't forget to set the API key. \n\n2. Click 'Refresh Index for Vault' and wait for indexing to complete. If you encounter the rate limiting error, please turn your request per second down in QA setting.";
-export const CHUNK_SIZE = 6000;
+export const CHUNK_SIZE = 4000;
 export const TEXT_WEIGHT = 0.4;
 export const MAX_CHARS_FOR_LOCAL_SEARCH_CONTEXT = 448000;
 export const LLM_TIMEOUT_MS = 30000; // 30 seconds timeout for LLM operations
@@ -694,12 +695,10 @@ export const AUTOCOMPLETE_CONFIG = {
 } as const;
 
 export const RESTRICTION_MESSAGES = {
-  NON_MARKDOWN_FILES_RESTRICTED:
-    "Non-markdown files are only available in Copilot Plus mode. Please upgrade to access this file type.",
-  URL_PROCESSING_RESTRICTED:
-    "URL processing is only available in Copilot Plus mode. URLs will not be processed for context.",
+  NON_MARKDOWN_FILES_RESTRICTED: () => t("notifications.restrictions.nonMarkdownFiles"),
+  URL_PROCESSING_RESTRICTED: () => t("notifications.restrictions.urlProcessing"),
   UNSUPPORTED_FILE_TYPE: (extension: string) =>
-    `${extension.toUpperCase()} files are not supported in the current mode.`,
+    t("notifications.restrictions.unsupportedFileType", { extension: extension.toUpperCase() }),
 } as const;
 
 export const DEFAULT_SETTINGS: CopilotSettings = {

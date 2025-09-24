@@ -3,19 +3,20 @@ import { ContextManageModal } from "@/components/modals/project/context-manage-m
 import { TruncatedText } from "@/components/TruncatedText";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
 import { Input } from "@/components/ui/input";
 import { getModelDisplayWithIcons } from "@/components/ui/model-display";
 import { ObsidianNativeSelect } from "@/components/ui/obsidian-native-select";
 import { SettingSlider } from "@/components/ui/setting-slider";
 import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_MODEL_SETTING } from "@/constants";
+import { useTranslation } from "@/i18n";
 import { getDecodedPatterns } from "@/search/searchUtils";
 import { getModelKeyFromModel, useSettingsValue } from "@/settings/model";
 import { checkModelApiKey, err2String, randomUUID } from "@/utils";
 import { App, Modal, Notice } from "obsidian";
 import React, { useState } from "react";
 import { createRoot, Root } from "react-dom/client";
-import { HelpTooltip } from "@/components/ui/help-tooltip";
 
 interface AddProjectModalContentProps {
   initialProject?: ProjectConfig;
@@ -24,6 +25,7 @@ interface AddProjectModalContentProps {
 }
 
 function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProjectModalContentProps) {
+  const { t } = useTranslation();
   const settings = useSettingsValue();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState({
@@ -129,7 +131,7 @@ function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProject
         ...prev,
         ...Object.fromEntries(missingFields.map((field) => [field, true])),
       }));
-      new Notice("Please fill in all required fields");
+      new Notice(t("settings.project.requiredFields.error"));
       return;
     }
 
@@ -150,15 +152,15 @@ function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProject
   return (
     <div className="tw-flex tw-flex-col tw-gap-2 tw-p-4">
       <div className="tw-mb-2 tw-text-xl tw-font-bold tw-text-normal">
-        {initialProject ? "Edit Project" : "New Project"}
+        {initialProject ? t("settings.project.edit.title") : t("settings.project.new.title")}
       </div>
 
       <div className="tw-flex tw-flex-col tw-gap-2">
         <FormField
-          label="Project Name"
+          label={t("settings.project.name.label")}
           required
           error={touched.name && !formData.name}
-          errorMessage="Project name is required"
+          errorMessage={t("settings.project.name.required")}
         >
           <Input
             type="text"
@@ -170,8 +172,8 @@ function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProject
         </FormField>
 
         <FormField
-          label="Description"
-          description="Briefly describe the purpose and goals of the project"
+          label={t("settings.project.description.label")}
+          description={t("settings.project.description.hint")}
         >
           <Input
             type="text"
@@ -182,7 +184,7 @@ function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProject
         </FormField>
 
         <FormField
-          label="Project System Prompt"
+          label={t("settings.project.systemPrompt.label")}
           description="Custom instructions for how the AI should behave in this project context"
         >
           <Textarea
@@ -216,7 +218,7 @@ function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProject
               handleInputChange("projectModelKey", value);
             }}
             onBlur={() => setTouched((prev) => ({ ...prev, projectModelKey: true }))}
-            placeholder="Select a model"
+            placeholder={t("project.modal.selectModel")}
             options={settings.activeModels
               .filter((m) => m.enabled && m.projectEnabled)
               .map((model) => ({
@@ -319,7 +321,7 @@ function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProject
 
                 handleInputChange("contextSource.webUrls", processedUrls.join("\n"));
               }}
-              placeholder="Enter web URLs, one per line"
+              placeholder={t("project.modal.enterWebUrls")}
               className="tw-min-h-20 tw-w-full"
             />
           </FormField>
@@ -349,7 +351,7 @@ function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProject
 
                 handleInputChange("contextSource.youtubeUrls", processedUrls.join("\n"));
               }}
-              placeholder="Enter YouTube URLs, one per line"
+              placeholder={t("project.modal.enterYouTubeUrls")}
               className="tw-min-h-20 tw-w-full"
             />
           </FormField>
@@ -358,10 +360,10 @@ function AddProjectModalContent({ initialProject, onSave, onCancel }: AddProject
 
       <div className="tw-mt-4 tw-flex tw-items-center tw-justify-end tw-gap-2">
         <Button variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
+          {t("common.buttons.cancel")}
         </Button>
         <Button onClick={handleSave} disabled={isSubmitting || !isFormValid()}>
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.labels.saving") : t("common.buttons.save")}
         </Button>
       </div>
     </div>

@@ -10,6 +10,7 @@ import {
 } from "@/aiParams";
 import { ChainType } from "@/chainFactory";
 import { useProjectContextStatus } from "@/hooks/useProjectContextStatus";
+import { useTranslation } from "@/i18n/useTranslation";
 import { logInfo } from "@/logger";
 
 import { ChatControls, reloadCurrentProject } from "@/components/chat-components/ChatControls";
@@ -18,13 +19,7 @@ import ChatMessages from "@/components/chat-components/ChatMessages";
 import { NewVersionBanner } from "@/components/chat-components/NewVersionBanner";
 import { ProjectList } from "@/components/chat-components/ProjectList";
 import ProgressCard from "@/components/project/progress-card";
-import {
-  ABORT_REASON,
-  EVENT_NAMES,
-  LOADING_MESSAGES,
-  RESTRICTION_MESSAGES,
-  USER_SENDER,
-} from "@/constants";
+import { ABORT_REASON, EVENT_NAMES, LOADING_MESSAGES, USER_SENDER } from "@/constants";
 import { AppContext, EventTargetContext } from "@/context";
 import { useChatManager } from "@/hooks/useChatManager";
 import { getAIResponse } from "@/langchainStream";
@@ -62,6 +57,7 @@ const Chat: React.FC<ChatProps> = ({
 }) => {
   const settings = useSettingsValue();
   const eventTarget = useContext(EventTargetContext);
+  const { t } = useTranslation();
 
   const { messages: chatHistory, addMessage } = useChatManager(chatUIState);
   const [currentModelKey] = useModelKey();
@@ -164,7 +160,7 @@ const Chat: React.FC<ChatProps> = ({
 
     if ((hasUrlsInContext || hasUrlsInMessage) && !isPlusChain(currentChain)) {
       // Show notice but continue processing the message without URL context
-      new Notice(RESTRICTION_MESSAGES.URL_PROCESSING_RESTRICTED);
+      new Notice(t("notifications.restrictions.urlProcessing"));
     }
 
     try {
@@ -255,8 +251,8 @@ const Chat: React.FC<ChatProps> = ({
         handleSaveAsNote();
       }
     } catch (error) {
-      console.error("Error sending message:", error);
-      new Notice("Failed to send message. Please try again.");
+      console.error(t("errors.chat.sendMessage"), error);
+      new Notice(t("notifications.chat.sendError"));
     } finally {
       safeSet.setLoading(false);
       safeSet.setLoadingMessage(LOADING_MESSAGES.DEFAULT);
@@ -265,7 +261,7 @@ const Chat: React.FC<ChatProps> = ({
 
   const handleSaveAsNote = useCallback(async () => {
     if (!app) {
-      console.error("App instance is not available.");
+      console.error(t("errors.app.instanceNotAvailable"));
       return;
     }
 
@@ -273,10 +269,10 @@ const Chat: React.FC<ChatProps> = ({
       // Use the new ChatManager persistence functionality
       await chatUIState.saveChat(currentModelKey);
     } catch (error) {
-      console.error("Error saving chat as note:", err2String(error));
-      new Notice("Failed to save chat as note. Check console for details.");
+      console.error(t("errors.chat.saveAsNote"), err2String(error));
+      new Notice(t("notifications.chat.saveError"));
     }
-  }, [app, chatUIState, currentModelKey]);
+  }, [app, chatUIState, currentModelKey, t]);
 
   const handleStopGenerating = useCallback(
     (reason?: ABORT_REASON) => {
@@ -307,13 +303,13 @@ const Chat: React.FC<ChatProps> = ({
   const handleRegenerate = useCallback(
     async (messageIndex: number) => {
       if (messageIndex <= 0) {
-        new Notice("Cannot regenerate the first message.");
+        new Notice(t("notifications.chat.cannotRegenerateFirst"));
         return;
       }
 
       const messageToRegenerate = chatHistory[messageIndex];
       if (!messageToRegenerate) {
-        new Notice("Message not found.");
+        new Notice(t("notifications.chat.messageNotFound"));
         return;
       }
 
@@ -328,9 +324,9 @@ const Chat: React.FC<ChatProps> = ({
         );
 
         if (!success) {
-          new Notice("Failed to regenerate message. Please try again.");
+          new Notice(t("notifications.chat.regenerateError"));
         } else if (settings.debug) {
-          console.log("Message regenerated successfully");
+          console.log(t("debug.chat.regenerateSuccess"));
         }
 
         // Autosave the chat if the setting is enabled
@@ -338,8 +334,8 @@ const Chat: React.FC<ChatProps> = ({
           handleSaveAsNote();
         }
       } catch (error) {
-        console.error("Error regenerating message:", error);
-        new Notice("Failed to regenerate message. Please try again.");
+        console.error(t("errors.chat.regenerateMessage"), error);
+        new Notice(t("notifications.chat.regenerateError"));
       } finally {
         safeSet.setLoading(false);
       }
@@ -352,6 +348,7 @@ const Chat: React.FC<ChatProps> = ({
       handleSaveAsNote,
       addMessage,
       safeSet,
+      t,
     ]
   );
 
@@ -371,7 +368,7 @@ const Chat: React.FC<ChatProps> = ({
         );
 
         if (!success) {
-          new Notice("Failed to edit message. Please try again.");
+          new Notice(t("notifications.chat.editError"));
           return;
         }
 
@@ -399,8 +396,8 @@ const Chat: React.FC<ChatProps> = ({
                 );
               }
             } catch (error) {
-              console.error("Error regenerating AI response:", error);
-              new Notice("Failed to regenerate AI response. Please try again.");
+              console.error(t("errors.chat.regenerateAIResponse"), error);
+              new Notice(t("notifications.chat.regenerateError"));
             } finally {
               safeSet.setLoading(false);
             }
@@ -412,8 +409,8 @@ const Chat: React.FC<ChatProps> = ({
           handleSaveAsNote();
         }
       } catch (error) {
-        console.error("Error editing message:", error);
-        new Notice("Failed to edit message. Please try again.");
+        console.error(t("errors.chat.editMessage"), error);
+        new Notice(t("notifications.chat.editError"));
       }
     },
     [
@@ -428,6 +425,7 @@ const Chat: React.FC<ChatProps> = ({
       handleSaveAsNote,
       safeSet,
       setAbortController,
+      t,
     ]
   );
 
@@ -444,7 +442,7 @@ const Chat: React.FC<ChatProps> = ({
       const existingIndex = currentProjects.findIndex((p) => p.name === project.name);
 
       if (existingIndex >= 0) {
-        throw new Error(`Project "${project.name}" already exists, please use a different name`);
+        throw new Error(t("errors.project.alreadyExists", { name: project.name }));
       }
 
       const newProjectList = [...currentProjects, project];
@@ -456,19 +454,19 @@ const Chat: React.FC<ChatProps> = ({
         // Reload the project context for the newly added project
         reloadCurrentProject()
           .then(() => {
-            new Notice(`${project.name} added and context loaded`);
+            new Notice(t("notifications.project.addedWithContext", { name: project.name }));
           })
           .catch((error: Error) => {
-            console.error("Error loading project context:", error);
-            new Notice(`${project.name} added but context loading failed`);
+            console.error(t("errors.project.loadContext"), error);
+            new Notice(t("notifications.project.addedContextFailed", { name: project.name }));
           });
       } else {
-        new Notice(`${project.name} added successfully`);
+        new Notice(t("notifications.project.addedSuccess", { name: project.name }));
       }
 
       return true;
     },
-    [settings.projectList]
+    [settings.projectList, t]
   );
 
   const handleEditProject = useCallback(
@@ -477,7 +475,7 @@ const Chat: React.FC<ChatProps> = ({
       const existingProject = currentProjects.find((p) => p.name === originP.name);
 
       if (!existingProject) {
-        throw new Error(`Project "${originP.name}" does not exist`);
+        throw new Error(t("errors.project.notExist", { name: originP.name }));
       }
 
       const newProjectList = currentProjects.map((p) => (p.name === originP.name ? updateP : p));
@@ -491,19 +489,19 @@ const Chat: React.FC<ChatProps> = ({
         // Reload the project context
         reloadCurrentProject()
           .then(() => {
-            new Notice(`${originP.name} updated and context reloaded`);
+            new Notice(t("notifications.project.updateWithContext", { name: originP.name }));
           })
           .catch((error: Error) => {
-            console.error("Error reloading project context:", error);
-            new Notice(`${originP.name} updated but context reload failed`);
+            console.error(t("errors.project.reloadContext"), error);
+            new Notice(t("notifications.project.updateContextFailed", { name: originP.name }));
           });
       } else {
-        new Notice(`${originP.name} updated successfully`);
+        new Notice(t("notifications.project.updateSuccess", { name: originP.name }));
       }
 
       return true;
     },
-    [settings.projectList]
+    [settings.projectList, t]
   );
 
   const handleInsertToChat = useCallback((prompt: string) => {
@@ -518,21 +516,21 @@ const Chat: React.FC<ChatProps> = ({
     async (messageIndex: number) => {
       const messageToDelete = chatHistory[messageIndex];
       if (!messageToDelete) {
-        new Notice("Message not found.");
+        new Notice(t("notifications.chat.messageNotFound"));
         return;
       }
 
       try {
         const success = await chatUIState.deleteMessage(messageToDelete.id!);
         if (!success) {
-          new Notice("Failed to delete message. Please try again.");
+          new Notice(t("notifications.chat.deleteError"));
         }
       } catch (error) {
-        console.error("Error deleting message:", error);
-        new Notice("Failed to delete message. Please try again.");
+        console.error(t("errors.chat.deleteMessage"), error);
+        new Notice(t("notifications.chat.deleteError"));
       }
     },
-    [chatHistory, chatUIState]
+    [chatHistory, chatUIState, t]
   );
 
   const handleNewChat = useCallback(async () => {

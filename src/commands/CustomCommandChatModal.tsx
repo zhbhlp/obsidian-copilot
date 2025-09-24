@@ -19,6 +19,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createRoot, Root } from "react-dom/client";
 import { CustomCommand } from "@/commands/type";
 import { useSettingsValue } from "@/settings/model";
+import { useTranslation } from "@/i18n";
 
 // Custom hook for managing chat chain
 function useChatChain(selectedModel: CustomModel, systemPrompt?: string) {
@@ -89,6 +90,7 @@ function CustomCommandChatModalContent({
     () => findCustomModel(command.modelKey || modelKey, settings.activeModels),
     [command.modelKey, modelKey, settings.activeModels]
   );
+  const { t } = useTranslation();
 
   const { chatChain, chatMemory } = useChatChain(selectedModel, systemPrompt);
 
@@ -99,7 +101,7 @@ function CustomCommandChatModalContent({
     async (input: string, abortController: AbortController) => {
       if (!chatChain) {
         console.error("Chat chain not initialized");
-        new Notice("Chat engine not ready. Please try again.");
+        new Notice(t("chat.modal.chatEngineNotReady"));
         setGenerating(false);
         return null;
       }
@@ -138,7 +140,7 @@ function CustomCommandChatModalContent({
         return null;
       }
     },
-    [chatChain, chatMemory]
+    [chatChain, chatMemory, t]
   );
 
   // Generate initial response
@@ -172,7 +174,7 @@ function CustomCommandChatModalContent({
   const handleFollowupSubmit = async () => {
     if (!followupInstruction.trim() || !chatChain) {
       if (!chatChain) {
-        new Notice("Chat engine not ready. Please try again.");
+        new Notice(t("chat.modal.chatEngineNotReady"));
       }
       return;
     }
@@ -262,7 +264,7 @@ function CustomCommandChatModalContent({
         <textarea
           ref={textareaRef}
           className="tw-peer tw-h-60 tw-w-full tw-text-text"
-          value={processedMessage ?? aiCurrentMessage ?? "loading..."}
+          value={processedMessage ?? aiCurrentMessage ?? t("common.labels.loading")}
           disabled={processedMessage == null}
           onChange={(e) => setProcessedMessage(e.target.value)}
         />
@@ -271,7 +273,7 @@ function CustomCommandChatModalContent({
             className="tw-absolute tw-right-2 tw-top-2 tw-opacity-0 tw-transition-opacity group-hover:tw-opacity-100 peer-focus-visible:!tw-opacity-0"
             onClick={() => {
               navigator.clipboard.writeText(processedMessage);
-              new Notice("Copied to clipboard");
+              new Notice(t("common.messages.copiedToClipboard"));
             }}
           >
             <Copy className="tw-size-4 hover:tw-text-accent" />
@@ -285,7 +287,7 @@ function CustomCommandChatModalContent({
             autoFocus
             ref={followupRef}
             className="tw-h-20 tw-w-full tw-text-text"
-            placeholder="Enter follow-up instructions..."
+            placeholder={t("chat.input.followupInstructions")}
             value={followupInstruction}
             onChange={(e) => setFollowupInstruction(e.target.value)}
           />
@@ -301,7 +303,7 @@ function CustomCommandChatModalContent({
           {generating ? (
             // When generating, show Stop button
             <Button size="sm" variant="secondary" onClick={handleStopGeneration}>
-              Stop
+              {t("common.buttons.stop")}
             </Button>
           ) : showFollowupSubmit ? (
             // When follow-up instruction has content, show Submit button with Enter shortcut
@@ -310,7 +312,7 @@ function CustomCommandChatModalContent({
               onClick={handleFollowupSubmit}
               className="tw-flex tw-items-center tw-gap-1"
             >
-              <span>Submit</span>
+              <span>{t("common.buttons.submit")}</span>
               <CornerDownLeft className="tw-size-3" />
             </Button>
           ) : (
@@ -321,7 +323,7 @@ function CustomCommandChatModalContent({
                 onClick={() => onInsert(processedMessage ?? "")}
                 className="tw-flex tw-items-center tw-gap-1"
               >
-                <span>Insert</span>
+                <span>{t("common.buttons.insert")}</span>
                 <div className="tw-flex tw-items-center tw-text-xs">
                   {Platform.isMacOS ? (
                     <>
@@ -343,7 +345,7 @@ function CustomCommandChatModalContent({
                 onClick={() => onReplace(processedMessage ?? "")}
                 className="tw-flex tw-items-center tw-gap-1"
               >
-                <span>Replace</span>
+                <span>{t("common.buttons.replace")}</span>
                 <div className="tw-flex tw-items-center tw-text-xs">
                   {Platform.isMacOS ? (
                     <>
