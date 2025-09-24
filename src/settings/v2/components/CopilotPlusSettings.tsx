@@ -12,6 +12,7 @@ import {
 import { SettingItem } from "@/components/ui/setting-item";
 import { HelpTooltip } from "@/components/ui/help-tooltip";
 import { AUTOCOMPLETE_CONFIG } from "@/constants";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { updateSetting, useSettingsValue } from "@/settings/model";
 import { RefreshCw } from "lucide-react";
@@ -20,27 +21,29 @@ import React, { useState } from "react";
 import { ToolSettingsSection } from "./ToolSettingsSection";
 
 export const CopilotPlusSettings: React.FC = () => {
+  const { t } = useTranslation();
   const settings = useSettingsValue();
   const currentShortcut = settings.autocompleteAcceptKey || AUTOCOMPLETE_CONFIG.KEYBIND;
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Available key options
   const keyOptions: { value: AcceptKeyOption; label: string }[] = [
-    { value: "Tab", label: "Tab" },
-    { value: "Space", label: "Space" },
-    { value: "ArrowRight", label: "Right Arrow" },
+    { value: "Tab", label: t("settings.plus.autocomplete.keys.tab") },
+    { value: "Space", label: t("settings.plus.autocomplete.keys.space") },
+    { value: "ArrowRight", label: t("settings.plus.autocomplete.keys.rightArrow") },
   ];
 
   // Handle key option change
   const handleKeyChange = (value: AcceptKeyOption) => {
     updateSetting("autocompleteAcceptKey", value);
-    new Notice(`Autocomplete accept key set to: ${value}`);
+    const keyLabel = keyOptions.find((option) => option.value === value)?.label || value;
+    new Notice(t("settings.plus.notices.acceptKeyUpdated", { key: keyLabel }));
   };
 
   // Reset to default
   const resetToDefault = () => {
     updateSetting("autocompleteAcceptKey", AUTOCOMPLETE_CONFIG.KEYBIND as AcceptKeyOption);
-    new Notice(`Autocomplete accept key reset to: ${AUTOCOMPLETE_CONFIG.KEYBIND}`);
+    new Notice(t("settings.plus.notices.acceptKeyReset"));
   };
 
   // Handle refresh word index
@@ -48,22 +51,25 @@ export const CopilotPlusSettings: React.FC = () => {
     if (isRefreshing) return;
 
     setIsRefreshing(true);
-    new Notice("Rebuilding word index...");
+    new Notice(t("settings.plus.notices.wordIndexRebuilding"));
 
     try {
       const wordManager = WordCompletionManager.getInstance(app.vault);
       const result = await wordManager.rescan((progress) => {
         if (progress.processedFiles === progress.totalFiles) {
           new Notice(
-            `Word index complete! Found ${progress.foundWords} words from ${progress.processedFiles} files.`
+            t("settings.plus.notices.wordIndexComplete", {
+              foundWords: progress.foundWords,
+              processedFiles: progress.processedFiles,
+            })
           );
         }
       });
 
-      new Notice(`Word index rebuilt successfully! ${result.wordCount} unique words indexed.`);
+      new Notice(t("settings.plus.notices.wordIndexRebuilt", { count: result.wordCount }));
     } catch (error) {
       console.error("Failed to refresh word index:", error);
-      new Notice("Failed to refresh word index. Check console for details.");
+      new Notice(t("settings.plus.notices.wordIndexFailed"));
     } finally {
       setIsRefreshing(false);
     }
@@ -74,16 +80,18 @@ export const CopilotPlusSettings: React.FC = () => {
       <section className="tw-flex tw-flex-col tw-gap-4">
         <div className="tw-flex tw-items-center tw-py-4">
           <Badge variant="secondary" className="tw-text-accent">
-            Plus Required
+            {t("settings.plus.badge.required")}
           </Badge>
         </div>
         <div className="tw-flex tw-flex-col tw-gap-4">
-          <div className="tw-pt-4 tw-text-xl tw-font-semibold">Autonomous Agent</div>
+          <div className="tw-pt-4 tw-text-xl tw-font-semibold">
+            {t("settings.plus.sections.autonomousAgent")}
+          </div>
 
           <SettingItem
             type="switch"
-            title="Enable Autonomous Agent"
-            description="Enable autonomous agent mode in Plus chat. The AI will reason step-by-step and decide which tools to use automatically, improving response quality for complex queries."
+            title={t("settings.plus.autonomousAgent.title")}
+            description={t("settings.plus.autonomousAgent.description")}
             checked={settings.enableAutonomousAgent}
             onCheckedChange={(checked) => {
               updateSetting("enableAutonomousAgent", checked);
@@ -96,15 +104,17 @@ export const CopilotPlusSettings: React.FC = () => {
             </>
           )}
 
-          <div className="tw-pt-4 tw-text-xl tw-font-semibold">Autocomplete</div>
+          <div className="tw-pt-4 tw-text-xl tw-font-semibold">
+            {t("settings.plus.sections.autocomplete")}
+          </div>
 
           <SettingItem
             type="switch"
-            title="Sentence Autocomplete"
+            title={t("settings.plus.autocomplete.sentence.title")}
             description={
               <div className="tw-flex tw-items-center tw-gap-1.5">
                 <span className="tw-leading-none">
-                  Enable AI-powered sentence autocomplete suggestions while typing
+                  {t("settings.plus.autocomplete.sentence.description")}
                 </span>
               </div>
             }
@@ -114,8 +124,8 @@ export const CopilotPlusSettings: React.FC = () => {
 
           <SettingItem
             type="switch"
-            title="Word Completion"
-            description="Suggest completions for partially typed words based on your vault's content. Requires at least 3 characters to trigger."
+            title={t("settings.plus.autocomplete.word.title")}
+            description={t("settings.plus.autocomplete.word.description")}
             checked={settings.enableWordCompletion}
             onCheckedChange={(checked) => {
               updateSetting("enableWordCompletion", checked);
@@ -124,8 +134,8 @@ export const CopilotPlusSettings: React.FC = () => {
 
           <SettingItem
             type="custom"
-            title="Word Index Management"
-            description="Rebuild the word index to include new words from your vault. The index is automatically built when the plugin loads."
+            title={t("settings.plus.wordIndex.title")}
+            description={t("settings.plus.wordIndex.description")}
           >
             <Button
               onClick={handleRefreshWordIndex}
@@ -133,24 +143,25 @@ export const CopilotPlusSettings: React.FC = () => {
               className="tw-flex tw-items-center tw-gap-2"
             >
               <RefreshCw className={cn("tw-size-4", isRefreshing && "tw-animate-spin")} />
-              {isRefreshing ? "Rebuilding..." : "Refresh Word Index"}
+              {isRefreshing
+                ? t("settings.plus.wordIndex.buttonRefreshing")
+                : t("settings.plus.wordIndex.buttonRefresh")}
             </Button>
           </SettingItem>
 
           <SettingItem
             type="custom"
-            title="Autocomplete Accept Suggestion Key"
+            title={t("settings.plus.autocomplete.acceptKey.title")}
             description={
               <div className="tw-flex tw-items-center tw-gap-1.5">
                 <span className="tw-leading-none">
-                  The key used to accept autocomplete suggestions
+                  {t("settings.plus.autocomplete.acceptKey.description")}
                 </span>
                 <HelpTooltip
                   content={
                     <div className="tw-flex tw-max-w-96 tw-flex-col tw-gap-2">
                       <div className="tw-text-sm tw-text-muted">
-                        Select the key you want to use for accepting suggestions. Default is
-                        &quot;Tab&quot;.
+                        {t("settings.plus.autocomplete.acceptKey.helpDescription")}
                       </div>
                     </div>
                   }
@@ -161,7 +172,9 @@ export const CopilotPlusSettings: React.FC = () => {
             <div className="tw-flex tw-items-center tw-gap-2">
               <Select value={currentShortcut} onValueChange={handleKeyChange}>
                 <SelectTrigger className="tw-w-[180px]">
-                  <SelectValue placeholder="Select key" />
+                  <SelectValue
+                    placeholder={t("settings.plus.autocomplete.acceptKey.placeholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {keyOptions.map((option) => (
@@ -174,7 +187,7 @@ export const CopilotPlusSettings: React.FC = () => {
 
               {currentShortcut && currentShortcut !== AUTOCOMPLETE_CONFIG.KEYBIND && (
                 <Button variant="ghost" onClick={resetToDefault} className="tw-h-8 tw-text-xs">
-                  Reset to Default
+                  {t("settings.plus.autocomplete.acceptKey.resetButton")}
                 </Button>
               )}
             </div>
@@ -182,8 +195,8 @@ export const CopilotPlusSettings: React.FC = () => {
 
           <SettingItem
             type="switch"
-            title="Allow Additional Context"
-            description="Allow the AI to access relevant notes to provide more relevant suggestions. When off, the AI can only see the current note context."
+            title={t("settings.plus.context.title")}
+            description={t("settings.plus.context.description")}
             checked={settings.allowAdditionalContext}
             onCheckedChange={(checked) => {
               updateSetting("allowAdditionalContext", checked);
